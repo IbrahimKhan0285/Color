@@ -4,12 +4,21 @@
     {
       "src": "*.html",
       "use": "@vercel/static"
+    },
+    {
+      "src": "dist/**/*",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
     {
-      "src": "/(.*)",
+      "src": "/",
       "dest": "/index.html"
+    },
+    {
+      "src": "/dist/(.*)",
+      "dest": "/dist/$1"
     }
-  ]
-} 
+  ],
+  "buildCommand": "npm run build"
+}
