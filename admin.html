@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-gray-900 min-h-screen">
+    <!-- Login Screen -->
+    <div id="loginScreen" class="fixed inset-0 bg-gradient-to-br from-gray-900 to-gray-800 flex items-center justify-center p-4">
+        <div class="bg-gray-800/50 backdrop-blur-xl rounded-2xl p-8 w-full max-w-md shadow-2xl border border-gray-700/50">
+            <div class="text-center mb-8">
+                <div class="w-24 h-24 bg-gradient-to-br from-orange-500 to-orange-600 rounded-full mx-auto mb-4 flex items-center justify-center shadow-lg">
+                    <i class="fas fa-user-shield text-white text-4xl"></i>
+                </div>
+                <h1 class="text-white text-3xl font-bold">Admin Panel</h1>
+                <p class="text-gray-400 text-sm mt-2">Secure access to management dashboard</p>
+            </div>
+            <div class="space-y-6">
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <i class="fas fa-lock text-gray-400"></i>
+                    </div>
+                    <input 
+                        type="password" 
+                        id="adminPassword" 
+                        placeholder="Enter Password" 
+                        class="w-full bg-gray-700/50 text-white pl-11 pr-11 py-4 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 transition-all border border-gray-600/50"
+                    >
+                    <button 
+                        onclick="togglePasswordVisibility('adminPassword')" 
+                        class="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-white transition-colors"
+                    >
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </div>
+                <div class="flex items-center">
+                    <input 
+                        type="checkbox" 
+                        id="rememberMe" 
+                        class="w-4 h-4 bg-gray-700 rounded border-gray-600 text-orange-500 focus:ring-orange-500"
+                    >
+                    <label for="rememberMe" class="ml-2 text-sm text-gray-300">
+                        Remember me for 1 day
+                    </label>
+                </div>
+                <div id="loginError" class="bg-red-500/10 border border-red-500/50 text-red-500 text-sm rounded-lg p-3 hidden">
+                    <i class="fas fa-exclamation-circle mr-2"></i>
+                    Incorrect password
+                </div>
+                <button 
+                    onclick="login()" 
+                    class="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white py-4 rounded-xl font-medium hover:from-orange-600 hover:to-orange-700 transition-all shadow-lg flex items-center justify-center gap-2 group"
+                >
+                    <i class="fas fa-sign-in-alt group-hover:translate-x-1 transition-transform"></i>
+                    Login to Dashboard
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Panel -->
+    <div id="adminPanel" class="hidden">
+        <!-- Header -->
+        <div class="bg-gray-800 border-b border-gray-700">
+            <div class="container mx-auto px-4 py-4">
+                <div class="flex justify-between items-center">
+                    <div class="flex items-center gap-4">
+                        <div class="bg-orange-500 w-10 h-10 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-shield-alt text-white text-xl"></i>
+                        </div>
+                        <h1 class="text-white text-xl font-bold">Admin Dashboard</h1>
+                    </div>
+                    <button onclick="logout()" class="bg-red-500/10 hover:bg-red-500/20 text-red-500 px-4 py-2 rounded-lg transition-colors flex items-center gap-2">
+                        <i class="fas fa-sign-out-alt"></i>
+                        Logout
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Content -->
+        <div class="container mx-auto px-4 py-6">
+            <!-- Stats Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <div class="bg-gradient-to-br from-blue-500/10 to-blue-600/10 border border-blue-500/20 rounded-xl p-4">
+                    <div class="flex items-center gap-4">
+                        <div class="bg-blue-500/20 rounded-lg p-3">
+                            <i class="fas fa-users text-blue-500 text-xl"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-gray-400 text-sm">Total Users</h3>
+                            <p class="text-white text-2xl font-bold" id="totalUsers">0</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gradient-to-br from-green-500/10 to-green-600/10 border border-green-500/20 rounded-xl p-4">
+                    <div class="flex items-center gap-4">
+                        <div class="bg-green-500/20 rounded-lg p-3">
+                            <i class="fas fa-wallet text-green-500 text-xl"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-gray-400 text-sm">Total Balance</h3>
+                            <p class="text-white text-2xl font-bold" id="totalBalance">₹0</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gradient-to-br from-purple-500/10 to-purple-600/10 border border-purple-500/20 rounded-xl p-4">
+                    <div class="flex items-center gap-4">
+                        <div class="bg-purple-500/20 rounded-lg p-3">
+                            <i class="fas fa-clock text-purple-500 text-xl"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-gray-400 text-sm">Total Users</h3>
+                            <p class="text-white text-2xl font-bold" id="todayUsers">0</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Users List -->
+            <div class="bg-gray-800/50 backdrop-blur border border-gray-700/50 rounded-xl overflow-hidden">
+                <div class="p-4 border-b border-gray-700">
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                        <div>
+                            <h2 class="text-white text-lg font-bold">User Management</h2>
+                            <p class="text-gray-400 text-sm">Manage user accounts and balances</p>
+                        </div>
+                        <div class="relative w-full md:w-auto">
+                            <input 
+                                type="text" 
+                                id="searchUser" 
+                                placeholder="Search users..." 
+                                class="w-full md:w-64 bg-gray-700/50 text-white pl-10 pr-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 border border-gray-600/50"
+                                oninput="searchUsers()"
+                            >
+                            <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-white">
+                        <thead>
+                            <tr class="bg-gray-700/30 text-gray-400 text-sm">
+                                <th class="py-3 px-4 text-left font-medium">Username</th>
+                                <th class="py-3 px-4 text-left font-medium">Name</th>
+                                <th class="py-3 px-4 text-left font-medium">Email</th>
+                                <th class="py-3 px-4 text-left font-medium">Mobile</th>
+                                <th class="py-3 px-4 text-left font-medium">Balance</th>
+                                <th class="py-3 px-4 text-left font-medium">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="usersList">
+                            <!-- Users will be populated here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Balance Modal -->
+    <div id="editModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4">
+        <div class="bg-gray-800/90 backdrop-blur border border-gray-700/50 rounded-xl p-6 w-full max-w-md shadow-2xl">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-white text-xl font-bold">Edit Balance</h2>
+                <button onclick="closeEditModal()" class="text-gray-400 hover:text-white transition-colors">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="space-y-4">
+                <div>
+                    <label class="text-gray-400 text-sm block mb-1">Username</label>
+                    <div id="editUsername" class="text-white font-medium"></div>
+                </div>
+                <div>
+                    <label class="text-gray-400 text-sm block mb-1">Current Balance</label>
+                    <div id="currentBalance" class="text-white text-2xl font-bold"></div>
+                </div>
+                <div>
+                    <label class="text-gray-400 text-sm block mb-1">New Balance</label>
+                    <input type="number" id="newBalance" class="w-full bg-gray-700/50 text-white px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 border border-gray-600/50">
+                </div>
+                <div class="flex gap-4 pt-4">
+                    <button onclick="saveBalance()" class="flex-1 bg-gradient-to-r from-green-500 to-green-600 text-white py-3 rounded-lg font-medium hover:from-green-600 hover:to-green-700 transition-all shadow-lg flex items-center justify-center gap-2">
+                        <i class="fas fa-save"></i>
+                        Save Changes
+                    </button>
+                    <button onclick="closeEditModal()" class="flex-1 bg-gray-700 text-white py-3 rounded-lg font-medium hover:bg-gray-600 transition-colors flex items-center justify-center gap-2">
+                        <i class="fas fa-times"></i>
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script>
+        const ADMIN_PASSWORD = '69420@';
+        const REMEMBER_ME_KEY = 'adminRememberMe';
+        let currentEditUser = null;
+
+        // Check for remembered login on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const remembered = localStorage.getItem(REMEMBER_ME_KEY);
+            if (remembered) {
+                const expiry = JSON.parse(remembered).expiry;
+                if (new Date().getTime() < expiry) {
+                    document.getElementById('loginScreen').classList.add('hidden');
+                    document.getElementById('adminPanel').classList.remove('hidden');
+                    loadUsers();
+                } else {
+                    localStorage.removeItem(REMEMBER_ME_KEY);
+                }
+            }
+        });
+
+        function login() {
+            const password = document.getElementById('adminPassword').value;
+            const rememberMe = document.getElementById('rememberMe').checked;
+            const loginError = document.getElementById('loginError');
+            
+            if (password === ADMIN_PASSWORD) {
+                if (rememberMe) {
+                    const expiry = new Date().getTime() + (24 * 60 * 60 * 1000);
+                    localStorage.setItem(REMEMBER_ME_KEY, JSON.stringify({
+                        expiry: expiry
+                    }));
+                }
+                
+                document.getElementById('loginScreen').classList.add('hidden');
+                document.getElementById('adminPanel').classList.remove('hidden');
+                loadUsers();
+                setupRealtimeUpdates();
+            } else {
+                loginError.classList.remove('hidden');
+            }
+        }
+
+        function logout() {
+            document.getElementById('adminPanel').classList.add('hidden');
+            document.getElementById('loginScreen').classList.remove('hidden');
+            document.getElementById('adminPassword').value = '';
+            document.getElementById('loginError').classList.add('hidden');
+            document.getElementById('rememberMe').checked = false;
+            localStorage.removeItem(REMEMBER_ME_KEY);
+        }
+
+        async function loadUsers() {
+            try {
+                const usersSnapshot = await db.collection('users').get();
+                const users = [];
+                let totalBalance = 0;
+
+                usersSnapshot.forEach(doc => {
+                    const userData = doc.data();
+                    users.push(userData);
+                    totalBalance += userData.balance || 0;
+                });
+
+                // Update stats
+                document.getElementById('totalUsers').textContent = users.length;
+                document.getElementById('totalBalance').textContent = `₹${totalBalance.toFixed(2)}`;
+                
+                // Get today's users
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                const todayUsersSnapshot = await db.collection('users')
+                    .where('createdAt', '>=', today)
+                    .get();
+                document.getElementById('todayUsers').textContent = todayUsersSnapshot.size;
+
+                // Update users list
+                const usersList = document.getElementById('usersList');
+                usersList.innerHTML = users.map(user => `
+                    <tr class="border-b border-gray-700/50 hover:bg-gray-700/30 transition-colors">
+                        <td class="py-3 px-4">${user.username}</td>
+                        <td class="py-3 px-4">${user.name || ''}</td>
+                        <td class="py-3 px-4">${user.email}</td>
+                        <td class="py-3 px-4">${user.mobile}</td>
+                        <td class="py-3 px-4">₹${user.balance || 0}</td>
+                        <td class="py-3 px-4">
+                            <button onclick="editBalance('${user.username}')" class="bg-orange-500/10 hover:bg-orange-500/20 text-orange-500 px-3 py-1 rounded-lg transition-colors">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `).join('');
+
+                if (users.length === 0) {
+                    usersList.innerHTML = `
+                        <tr class="border-b border-gray-700/50">
+                            <td colspan="6" class="py-8 text-center text-gray-400">
+                                <i class="fas fa-users text-4xl mb-2"></i>
+                                <p>No users found</p>
+                            </td>
+                        </tr>
+                    `;
+                }
+            } catch (error) {
+                console.error("Error loading users:", error);
+            }
+        }
+
+        async function editBalance(username) {
+            try {
+                const userQuery = await db.collection('users')
+                    .where('username', '==', username)
+                    .get();
+                
+                if (!userQuery.empty) {
+                    const user = userQuery.docs[0].data();
+                    currentEditUser = username;
+                    document.getElementById('editUsername').textContent = username;
+                    document.getElementById('currentBalance').textContent = `₹${user.balance || 0}`;
+                    document.getElementById('newBalance').value = user.balance || 0;
+                    document.getElementById('editModal').classList.remove('hidden');
+                    document.getElementById('editModal').classList.add('flex');
+                }
+            } catch (error) {
+                console.error("Error fetching user:", error);
+                alert('Error loading user data. Please try again.');
+            }
+        }
+
+        async function saveBalance() {
+            const newBalance = parseFloat(document.getElementById('newBalance').value);
+            
+            if (isNaN(newBalance)) {
+                alert('Please enter a valid number');
+                return;
+            }
+
+            try {
+                const userQuery = await db.collection('users')
+                    .where('username', '==', currentEditUser)
+                    .get();
+
+                if (!userQuery.empty) {
+                    const userDoc = userQuery.docs[0];
+                    await userDoc.ref.update({
+                        balance: newBalance
+                    });
+                    
+                    loadUsers();
+                    closeEditModal();
+                }
+            } catch (error) {
+                console.error("Error updating balance:", error);
+                alert('Error updating balance. Please try again.');
+            }
+        }
+
+        function closeEditModal() {
+            document.getElementById('editModal').classList.add('hidden');
+            document.getElementById('editModal').classList.remove('flex');
+            currentEditUser = null;
+        }
+
+        function togglePasswordVisibility(inputId) {
+            const input = document.getElementById(inputId);
+            const icon = input.nextElementSibling.querySelector('i');
+            
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('editModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeEditModal();
+            }
+        });
+
+        // Handle Enter key for login
+        document.getElementById('adminPassword').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                login();
+            }
+        });
+
+        async function searchUsers() {
+            try {
+                const searchTerm = document.getElementById('searchUser').value.toLowerCase();
+                const usersSnapshot = await db.collection('users').get();
+                const users = [];
+                
+                usersSnapshot.forEach(doc => {
+                    const userData = doc.data();
+                    if (
+                        userData.username.toLowerCase().includes(searchTerm) ||
+                        (userData.name || '').toLowerCase().includes(searchTerm) ||
+                        userData.email.toLowerCase().includes(searchTerm) ||
+                        userData.mobile.includes(searchTerm)
+                    ) {
+                        users.push(userData);
+                    }
+                });
+
+                const usersList = document.getElementById('usersList');
+                usersList.innerHTML = users.map(user => `
+                    <tr class="border-b border-gray-700/50 hover:bg-gray-700/30 transition-colors">
+                        <td class="py-3 px-4">${user.username}</td>
+                        <td class="py-3 px-4">${user.name || ''}</td>
+                        <td class="py-3 px-4">${user.email}</td>
+                        <td class="py-3 px-4">${user.mobile}</td>
+                        <td class="py-3 px-4">₹${user.balance || 0}</td>
+                        <td class="py-3 px-4">
+                            <button onclick="editBalance('${user.username}')" class="bg-orange-500/10 hover:bg-orange-500/20 text-orange-500 px-3 py-1 rounded-lg transition-colors">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `).join('');
+
+                if (users.length === 0) {
+                    usersList.innerHTML = `
+                        <tr class="border-b border-gray-700/50">
+                            <td colspan="6" class="py-8 text-center text-gray-400">
+                                <i class="fas fa-users text-4xl mb-2"></i>
+                                <p>No users found</p>
+                            </td>
+                        </tr>
+                    `;
+                }
+            } catch (error) {
+                console.error("Error searching users:", error);
+            }
+        }
+
+        // Add this in the script section after the Firebase SDK imports
+        const firebaseConfig = {
+            apiKey: "AIzaSyA1NChxNR0a2D9oImLFAAN2bhQe10jDGsM",
+            authDomain: "color-ecd3e.firebaseapp.com",
+            projectId: "color-ecd3e",
+            storageBucket: "color-ecd3e.firebasestorage.app",
+            messagingSenderId: "438249616713",
+            appId: "1:438249616713:web:c1d5e3c5b057487d205698",
+            measurementId: "G-D4Y5Z5QPNR"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+
+        // Get Firestore instance
+        const db = firebase.firestore();
+
+        // Add this after Firebase initialization
+        function setupRealtimeUpdates() {
+            db.collection('users').onSnapshot(snapshot => {
+                loadUsers();
+            }, error => {
+                console.error("Error in realtime updates:", error);
+            });
+        }
+    </script>
+</body>
+</html> 

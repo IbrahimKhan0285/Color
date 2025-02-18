@@ -1,0 +1,2658 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Color Trading</title>
+    <link href="/dist/output.css" rel="stylesheet" type="text/css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        .number-ball {
+            background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0) 70%);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            font-size: 1.25rem;
+            font-weight: bold;
+        }
+        .timer-digit {
+            aspect-ratio: 1;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            min-width: 1.5rem;
+        }
+        .game-container {
+            max-width: 400px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+        @media (max-width: 380px) {
+            .game-container {
+                padding: 0.5rem;
+            }
+            .number-ball {
+                width: 2.5rem !important;
+                height: 2.5rem !important;
+                font-size: 1rem;
+            }
+        }
+        .wallet-card {
+            background: linear-gradient(145deg, #ff9f2d, #ff8c00);
+            box-shadow: 0 4px 15px rgba(255, 140, 0, 0.3);
+        }
+        .game-option {
+            background: rgba(55, 65, 81, 0.9);
+            backdrop-filter: blur(5px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .game-option.active {
+            background: linear-gradient(145deg, #ff9f2d, #ff8c00);
+        }
+        .nav-item {
+            position: relative;
+            transition: all 0.3s ease;
+        }
+        .nav-item.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 20px;
+            height: 2px;
+            background-color: #ff8c00;
+        }
+        .navbar {
+            background: #ffffff;
+            box-shadow: 0 -1px 8px rgba(0, 0, 0, 0.1);
+        }
+        .logo {
+            font-size: 1.75rem;
+            font-weight: bold;
+            background: linear-gradient(145deg, #ff9f2d, #ff8c00);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .blur-container {
+            transition: filter 0.3s ease;
+        }
+        .blur-container.active {
+            filter: blur(4px);
+        }
+        .screen-container {
+            width: 100%;
+            height: 100vh;
+            position: relative;
+        }
+        .screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+            overflow-y: auto;
+        }
+        .screen.active {
+            display: block;
+        }
+
+        /* Animations */
+        @keyframes slideIn {
+            from {
+                transform: translateY(20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .animate-slide-in {
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .animate-fade-in {
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        /* Error Message */
+        .error-message {
+            background-color: rgba(239, 68, 68, 0.1);
+            border-left: 4px solid #ef4444;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            color: #ef4444;
+            border-radius: 0.5rem;
+            display: none;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        /* Profile Picture */
+        .profile-picture-container {
+            position: relative;
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 1rem;
+        }
+
+        .profile-picture {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+            background: #374151;
+            border: 3px solid #f97316;
+        }
+
+        .profile-picture-overlay {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            background: #f97316;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .profile-picture-overlay:hover {
+            transform: scale(1.1);
+        }
+
+        /* Screen Transitions */
+        .screen {
+            transition: opacity 0.3s ease-out;
+        }
+
+        .screen:not(.active) {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .screen.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* Overlay Timer */
+        #overlayTimer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            display: none;
+        }
+        
+        .countdown-number {
+            font-size: 15rem;
+            color: white;
+            text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+            animation: pulse 1s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.1); opacity: 0.8; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        
+        .dimmed {
+            opacity: 0.3;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        
+        /* Result Popup */
+        #resultPopup {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+
+        #resultPopup.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .result-card {
+            position: relative; /* Add this to position the close button */
+            background: linear-gradient(180deg, #2d3748 0%, #1a202c 100%);
+            border-radius: 20px;
+            padding: 2rem;
+            width: 300px;
+            text-align: center;
+        }
+
+        /* Add styles for close button */
+        .result-card button {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0.5rem;
+            transition: color 0.3s ease;
+        }
+
+        .result-card button:hover {
+            color: white;
+        }
+
+        .trophy-icon {
+            color: #ff8c00;
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .result-title {
+            color: #ff8c00;
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 1.5rem;
+        }
+
+        .result-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 1rem;
+        }
+
+        #resultNumber {
+            font-size: 4rem;
+            font-weight: bold;
+            color: white;
+            margin: 1rem 0;
+        }
+
+        .result-tag {
+            padding: 0.5rem 1rem;
+            border-radius: 999px;
+            font-weight: bold;
+            font-size: 0.875rem;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateY(-100%) translateX(-50%);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0) translateX(-50%);
+                opacity: 1;
+            }
+        }
+
+        @keyframes scaleIn {
+            from {
+                transform: scale(0.8);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .animate-slide-in {
+            animation: slideIn 0.3s ease-out forwards;
+        }
+
+        .animate-scale-in {
+            animation: scaleIn 0.3s ease-out forwards;
+        }
+
+        #notificationPopup {
+            transition: all 0.3s ease;
+        }
+
+        #winPopup {
+            transition: all 0.3s ease;
+        }
+
+        /* Update the bottom navigation styles */
+        #bottomNav {
+            background: #ffffff;
+            border-top: 1px solid #eee;
+            height: 50px;
+            width: 100%;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 50;
+            display: flex;
+            justify-content: center;
+        }
+
+        .nav-item {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            min-width: 64px;
+            padding: 4px 0;
+            color: #999;
+            transition: all 0.2s ease;
+            background: none;
+            border: none;
+            outline: none;
+        }
+
+        .nav-item i {
+            font-size: 18px;
+            margin-bottom: 2px;
+        }
+
+        .nav-item span {
+            font-size: 10px;
+            line-height: 1;
+        }
+
+        .nav-item.active {
+            color: #f97316;
+        }
+
+        /* Remove the after pseudo-element and use a separate element for the indicator */
+        .nav-item .indicator {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 24px;
+            height: 2px;
+            background-color: #f97316;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .nav-item.active .indicator {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 min-h-screen">
+    <div class="screen-container">
+        <!-- Main Screen -->
+        <div id="mainScreen" class="screen active">
+            <div class="blur-container">
+                <div class="game-container mt-8">
+                    <!-- Wallet Section -->
+                    <div class="wallet-card rounded-2xl p-4 mb-4">
+                        <div class="text-white text-center">
+                            <div id="walletContent">
+                                <!-- This will be dynamically updated based on login status -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Game Options -->
+                    <div class="grid grid-cols-4 gap-2 mb-4">
+                        <div class="game-option active p-3 rounded-xl text-center text-white text-sm cursor-pointer hover:scale-105 transition-all">
+                            <div class="w-8 h-8 bg-red-400 rounded-full mx-auto mb-1 shadow-lg"></div>
+                            Win Go Parity
+                        </div>
+                        <div class="game-option p-3 rounded-xl text-center text-white text-sm cursor-pointer hover:scale-105 transition-all">
+                            <div class="w-8 h-8 bg-gray-400 rounded-full mx-auto mb-1 shadow-lg"></div>
+                            Win Go Sapre
+                        </div>
+                        <div class="game-option p-3 rounded-xl text-center text-white text-sm cursor-pointer hover:scale-105 transition-all">
+                            <div class="w-8 h-8 bg-gray-400 rounded-full mx-auto mb-1 shadow-lg"></div>
+                            Win Go Bcone
+                        </div>
+                        <div class="game-option p-3 rounded-xl text-center text-white text-sm cursor-pointer hover:scale-105 transition-all">
+                            <div class="w-8 h-8 bg-gray-400 rounded-full mx-auto mb-1 shadow-lg"></div>
+                            Win Go Emerd
+                        </div>
+                    </div>
+
+                    <!-- Info Buttons -->
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        <button onclick="showScreen('howToPlayScreen')" class="bg-gray-800 text-orange-500 rounded-xl py-2.5 px-4 text-sm font-medium hover:bg-gray-700 transition-all shadow-lg">
+                            <i class="fas fa-gamepad"></i> How to Play
+                        </button>
+                        <button onclick="showScreen('presaleRulesScreen')" class="bg-gray-800 text-orange-500 rounded-xl py-2.5 px-4 text-sm font-medium hover:bg-gray-700 transition-all shadow-lg">
+                            <i class="fas fa-clipboard-list"></i> Presale Rules
+                        </button>
+                    </div>
+
+                    <!-- Period and Timer -->
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        <div class="wallet-card rounded-xl p-3">
+                            <div class="text-white text-sm mb-1"><i class="fas fa-trophy"></i> Period</div>
+                            <div class="text-white font-bold" id="period">202500000000</div>
+                        </div>
+                        <div class="wallet-card rounded-xl p-3">
+                            <div class="text-white text-sm mb-1"><i class="fas fa-clock"></i> Time Remaining</div>
+                            <div class="text-white flex justify-center gap-1">
+                                <span class="bg-gray-800 px-2 timer-digit rounded" id="seconds1">3</span>
+                                <span class="bg-gray-800 px-2 timer-digit rounded" id="seconds2">0</span>
+                                <span class="font-bold">:</span>
+                                <span class="bg-gray-800 px-2 timer-digit rounded" id="millis1">0</span>
+                                <span class="bg-gray-800 px-2 timer-digit rounded" id="millis2">0</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Color Buttons -->
+                    <div id="gameContent" class="grid grid-cols-3 gap-3 mb-4">
+                        <button onclick="showPopup('green')" class="bg-green-500 text-white py-2.5 rounded-xl font-medium hover:bg-green-600 transition-all shadow-lg">Green</button>
+                        <button onclick="showPopup('violet')" class="bg-violet-500 text-white py-2.5 rounded-xl font-medium hover:bg-violet-600 transition-all shadow-lg">Violet</button>
+                        <button onclick="showPopup('red')" class="bg-red-500 text-white py-2.5 rounded-xl font-medium hover:bg-red-600 transition-all shadow-lg">Red</button>
+                    </div>
+
+                    <!-- Number Grid -->
+                    <div class="bg-gray-800 p-4 rounded-xl mb-4">
+                        <div class="grid grid-cols-5 gap-2">
+                            <button class="w-12 h-12 rounded-full bg-violet-500 text-white mx-auto number-ball hover:scale-105 transition-transform">0</button>
+                            <button class="w-12 h-12 rounded-full bg-green-500 text-white mx-auto number-ball hover:scale-105 transition-transform">1</button>
+                            <button class="w-12 h-12 rounded-full bg-red-500 text-white mx-auto number-ball hover:scale-105 transition-transform">2</button>
+                            <button class="w-12 h-12 rounded-full bg-green-500 text-white mx-auto number-ball hover:scale-105 transition-transform">3</button>
+                            <button class="w-12 h-12 rounded-full bg-red-500 text-white mx-auto number-ball hover:scale-105 transition-transform">4</button>
+                            <button class="w-12 h-12 rounded-full bg-green-500 text-white mx-auto number-ball hover:scale-105 transition-transform">5</button>
+                            <button class="w-12 h-12 rounded-full bg-red-500 text-white mx-auto number-ball hover:scale-105 transition-transform">6</button>
+                            <button class="w-12 h-12 rounded-full bg-green-500 text-white mx-auto number-ball hover:scale-105 transition-transform">7</button>
+                            <button class="w-12 h-12 rounded-full bg-red-500 text-white mx-auto number-ball hover:scale-105 transition-transform">8</button>
+                            <button class="w-12 h-12 rounded-full bg-green-500 text-white mx-auto number-ball hover:scale-105 transition-transform">9</button>
+                        </div>
+                    </div>
+
+                    <!-- Size Buttons -->
+                    <div class="grid grid-cols-2 gap-4 mb-4 ">
+                        <button onclick="showPopup('small')" class="wallet-card text-white py-2.5 rounded-xl font-medium hover:opacity-90 transition-all shadow-lg">Small</button>
+                        <button onclick="showPopup('big')" class="wallet-card text-white py-2.5 rounded-xl font-medium hover:opacity-90 transition-all shadow-lg">Big</button>
+                    </div>
+
+                    <!-- Game History Section -->
+                    <div class="bg-gray-800 rounded-2xl p-4 mb-4">
+                        <div class="flex justify-between items-center mb-4">
+                            <button onclick="switchHistory('rounds')" class="text-white font-medium px-4 py-2 rounded-lg bg-orange-500 hover:bg-orange-500 transition-all active">Game History</button>
+                            <button onclick="switchHistory('bets')" class="text-white font-medium px-4 py-2 rounded-lg bg-gray-700 hover:bg-orange-500 transition-all">My Bets</button>
+                        </div>
+                        
+                        <div class="h-[200px] overflow-y-auto pr-2">
+                            <div class="space-y-2" id="gameHistory">
+                                <!-- History Items will be populated here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Overlay Timer -->
+        <div id="overlayTimer" class="fixed inset-0 bg-black/50 z-40 hidden">
+            <div class="text-white text-9xl font-bold countdown-number flex items-center justify-center h-full">5</div>
+        </div>
+
+        <!-- Result Popup -->
+        <div id="resultPopup">
+            <div class="result-card">
+                <!-- Add close button -->
+                <button onclick="hideResultPopup()" class="absolute top-2 right-2 text-gray-400 hover:text-white">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+                <div class="trophy-icon">
+                    <i class="fas fa-trophy"></i>
+                </div>
+                <div class="result-title">Round Result</div>
+                <div class="result-content">
+                    <div id="resultSize" class="result-tag"></div>
+                    <div id="resultNumber"></div>
+                    <div id="resultColor" class="result-tag"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Withdraw Screen -->
+        <div id="withdrawScreen" class="screen">
+            <div class="bg-gray-900 min-h-screen pb-20">
+                <div class="container mx-auto px-4 py-6">
+                    <!-- Header -->
+                    <div class="flex items-center mb-8">
+                        <button onclick="showScreen('mainScreen')" class="text-white mr-4">
+                            <i class="fas fa-arrow-left text-2xl"></i>
+                        </button>
+                        <h1 class="text-white text-2xl font-bold">Withdraw Money</h1>
+                    </div>
+
+                    <!-- Amount Card -->
+                    <div class="bg-gradient-to-r from-red-600 to-red-700 rounded-2xl p-6 mb-8 shadow-lg">
+                        <div class="text-white opacity-80 mb-2">Enter Amount</div>
+                        <div class="flex items-baseline">
+                            <span class="text-white text-2xl mr-2">₹</span>
+                            <div id="withdrawAmount" class="text-white text-4xl font-bold">0</div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Amount Buttons -->
+                    <div class="grid grid-cols-3 gap-3 mb-8">
+                        <button onclick="setQuickAmount('withdraw', 1000)" class="bg-gray-800 text-white py-3 rounded-xl hover:bg-gray-700">₹1,000</button>
+                        <button onclick="setQuickAmount('withdraw', 2000)" class="bg-gray-800 text-white py-3 rounded-xl hover:bg-gray-700">₹2,000</button>
+                        <button onclick="setQuickAmount('withdraw', 5000)" class="bg-gray-800 text-white py-3 rounded-xl hover:bg-gray-700">₹5,000</button>
+                    </div>
+
+                    <!-- Numpad -->
+                    <div class="grid grid-cols-3 gap-4 mb-8">
+                        <button onclick="addNumber('withdraw', '1')" class="bg-gray-800 text-white text-2xl font-bold rounded-2xl p-6 hover:bg-gray-700">1</button>
+                        <button onclick="addNumber('withdraw', '2')" class="bg-gray-800 text-white text-2xl font-bold rounded-2xl p-6 hover:bg-gray-700">2</button>
+                        <button onclick="addNumber('withdraw', '3')" class="bg-gray-800 text-white text-2xl font-bold rounded-2xl p-6 hover:bg-gray-700">3</button>
+                        <button onclick="addNumber('withdraw', '4')" class="bg-gray-800 text-white text-2xl font-bold rounded-2xl p-6 hover:bg-gray-700">4</button>
+                        <button onclick="addNumber('withdraw', '5')" class="bg-gray-800 text-white text-2xl font-bold rounded-2xl p-6 hover:bg-gray-700">5</button>
+                        <button onclick="addNumber('withdraw', '6')" class="bg-gray-800 text-white text-2xl font-bold rounded-2xl p-6 hover:bg-gray-700">6</button>
+                        <button onclick="addNumber('withdraw', '7')" class="bg-gray-800 text-white text-2xl font-bold rounded-2xl p-6 hover:bg-gray-700">7</button>
+                        <button onclick="addNumber('withdraw', '8')" class="bg-gray-800 text-white text-2xl font-bold rounded-2xl p-6 hover:bg-gray-700">8</button>
+                        <button onclick="addNumber('withdraw', '9')" class="bg-gray-800 text-white text-2xl font-bold rounded-2xl p-6 hover:bg-gray-700">9</button>
+                        <button onclick="addNumber('withdraw', '.')" class="bg-gray-800 text-white text-2xl font-bold rounded-2xl p-6 hover:bg-gray-700">.</button>
+                        <button onclick="addNumber('withdraw', '0')" class="bg-gray-800 text-white text-2xl font-bold rounded-2xl p-6 hover:bg-gray-700">0</button>
+                        <button onclick="clearAmount('withdraw')" class="bg-gray-800 text-white text-xl font-bold rounded-2xl p-6 hover:bg-gray-700">
+                            <i class="fas fa-backspace"></i>
+                        </button>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <button onclick="submitWithdraw()" class="w-full bg-gradient-to-r from-red-600 to-red-700 text-white py-4 rounded-2xl font-bold text-lg hover:from-red-700 hover:to-red-800 transition-all shadow-lg">
+                        <i class="fas fa-check mr-2"></i>Confirm Withdrawal
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Deposit Screen -->
+        <div id="depositScreen" class="screen">
+            <div class="bg-gray-900 min-h-screen pb-20">
+                <div class="container mx-auto px-4 py-6">
+                    <!-- Header -->
+                    <div class="flex items-center mb-8">
+                        <button onclick="showScreen('mainScreen')" class="text-white mr-4">
+                            <i class="fas fa-arrow-left text-2xl"></i>
+                        </button>
+                        <h1 class="text-white text-2xl font-bold">Deposit Money</h1>
+                    </div>
+
+                    <!-- Amount Card -->
+                    <div class="bg-gradient-to-r from-green-600 to-green-700 rounded-2xl p-6 mb-8 shadow-lg">
+                        <div class="text-white opacity-80 mb-2">Enter Amount</div>
+                        <div class="flex items-baseline">
+                            <span class="text-white text-2xl mr-2">₹</span>
+                            <div id="depositAmount" class="text-white text-4xl font-bold">0</div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Amount Buttons -->
+                    <div class="grid grid-cols-3 gap-3 mb-8">
+                        <button onclick="setQuickAmount('deposit', 1000)" class="bg-gray-800 text-white py-3 rounded-xl hover:bg-gray-700">₹1,000</button>
+                        <button onclick="setQuickAmount('deposit', 2000)" class="bg-gray-800 text-white py-3 rounded-xl hover:bg-gray-700">₹2,000</button>
+                        <button onclick="setQuickAmount('deposit', 5000)" class="bg-gray-800 text-white py-3 rounded-xl hover:bg-gray-700">₹5,000</button>
+                    </div>
+
+                    <!-- Numpad -->
+                    <div class="grid grid-cols-3 gap-4 mb-8">
+                        <button onclick="addNumber('deposit', '1')" class="bg-gray-800 text-white text-2xl font-bold rounded-2xl p-6 hover:bg-gray-700">1</button>
+                        <button onclick="addNumber('deposit', '2')" class="bg-gray-800 text-white text-2xl font-bold rounded-2xl p-6 hover:bg-gray-700">2</button>
+                        <button onclick="addNumber('deposit', '3')" class="bg-gray-800 text-white text-2xl font-bold rounded-2xl p-6 hover:bg-gray-700">3</button>
+                        <button onclick="addNumber('deposit', '4')" class="bg-gray-800 text-white text-2xl font-bold rounded-2xl p-6 hover:bg-gray-700">4</button>
+                        <button onclick="addNumber('deposit', '5')" class="bg-gray-800 text-white text-2xl font-bold rounded-2xl p-6 hover:bg-gray-700">5</button>
+                        <button onclick="addNumber('deposit', '6')" class="bg-gray-800 text-white text-2xl font-bold rounded-2xl p-6 hover:bg-gray-700">6</button>
+                        <button onclick="addNumber('deposit', '7')" class="bg-gray-800 text-white text-2xl font-bold rounded-2xl p-6 hover:bg-gray-700">7</button>
+                        <button onclick="addNumber('deposit', '8')" class="bg-gray-800 text-white text-2xl font-bold rounded-2xl p-6 hover:bg-gray-700">8</button>
+                        <button onclick="addNumber('deposit', '9')" class="bg-gray-800 text-white text-2xl font-bold rounded-2xl p-6 hover:bg-gray-700">9</button>
+                        <button onclick="addNumber('deposit', '.')" class="bg-gray-800 text-white text-2xl font-bold rounded-2xl p-6 hover:bg-gray-700">.</button>
+                        <button onclick="addNumber('deposit', '0')" class="bg-gray-800 text-white text-2xl font-bold rounded-2xl p-6 hover:bg-gray-700">0</button>
+                        <button onclick="clearAmount('deposit')" class="bg-gray-800 text-white text-xl font-bold rounded-2xl p-6 hover:bg-gray-700">
+                            <i class="fas fa-backspace"></i>
+                        </button>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <button onclick="submitDeposit()" class="w-full bg-gradient-to-r from-green-600 to-green-700 text-white py-4 rounded-2xl font-bold text-lg hover:from-green-700 hover:to-green-800 transition-all shadow-lg">
+                        <i class="fas fa-check mr-2"></i>Confirm Deposit
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Profile Screen -->
+        <div id="profileScreen" class="screen">
+            <div class="bg-gray-900 min-h-screen pb-20">
+                <!-- Header -->
+                <div class="bg-[#1a1f2e] p-4 flex items-center justify-between">
+                    <div class="flex items-center gap-4">
+                        <button onclick="showScreen('mainScreen')" class="text-white">
+                            <i class="fas fa-arrow-left text-xl"></i>
+                        </button>
+                        <h1 class="text-white text-xl font-medium">Profile</h1>
+                    </div>
+                    <button onclick="AuthManager.logout()" id="logoutBtn" class="text-red-500">
+                        <i class="fas fa-sign-out-alt text-xl"></i>
+                    </button>
+                </div>
+
+                <!-- Profile Content -->
+                <div class="p-4">
+                    <!-- Profile Forms Container -->
+                    <div id="profileFormsContainer">
+                        <!-- Login Form -->
+                        <div id="loginForm" class="space-y-4 p-6 bg-[#1a1f2e] rounded-xl">
+                            <h2 class="text-2xl font-bold text-white mb-6">Login</h2>
+                            <div>
+                                <label class="block text-gray-400 text-sm mb-1">Email</label>
+                                <input type="email" id="loginEmail" 
+                                    class="w-full bg-gray-800 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
+                                    placeholder="Enter your email">
+                            </div>
+                            <div>
+                                <label class="block text-gray-400 text-sm mb-1">Password</label>
+                                <div class="relative">
+                                    <input type="password" id="loginPassword" 
+                                        class="w-full bg-gray-800 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
+                                        placeholder="Enter your password">
+                                    <button onclick="togglePasswordVisibility('loginPassword')" type="button"
+                                        class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <button onclick="handleLogin()" 
+                                class="w-full bg-orange-500 text-white rounded-lg py-3 font-medium hover:bg-orange-600 transition-colors">
+                                Login
+                            </button>
+                            <p class="text-center text-gray-400">
+                                Don't have an account? 
+                                <button onclick="showRegistrationForm()" class="text-orange-500 hover:text-orange-400">Register</button>
+                            </p>
+                        </div>
+
+                        <!-- Registration Form -->
+                        <div id="registrationForm" class="bg-[#1a1f2e] rounded-xl p-6 mb-4 hidden">
+                            <h2 class="text-white text-xl font-bold mb-6">Create Account</h2>
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-gray-400 text-sm mb-1">Email</label>
+                                    <input type="email" id="regEmail" 
+                                        class="w-full bg-gray-800 text-white px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                                        placeholder="Enter your email">
+                                </div>
+                                <div>
+                                    <label class="block text-gray-400 text-sm mb-1">Username</label>
+                                    <input type="text" id="regUsername" 
+                                        class="w-full bg-gray-800 text-white px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                                        placeholder="Choose a username">
+                                </div>
+                                <div>
+                                    <label class="block text-gray-400 text-sm mb-1">Mobile</label>
+                                    <input type="tel" id="regMobile" 
+                                        class="w-full bg-gray-800 text-white px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                                        placeholder="Enter mobile number">
+                                </div>
+                                <div>
+                                    <label class="block text-gray-400 text-sm mb-1">Password</label>
+                                    <div class="relative">
+                                        <input type="password" id="regPassword" 
+                                            class="w-full bg-gray-800 text-white px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                                            placeholder="Choose a password">
+                                        <button onclick="togglePasswordVisibility('regPassword')" type="button"
+                                            class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <button onclick="handleRegistration()" 
+                                    class="w-full bg-orange-500 text-white py-3 rounded-lg font-medium hover:bg-orange-600 transition-colors">
+                                    Create Account
+                                </button>
+                                <p class="text-center text-gray-400">
+                                    Already have an account? 
+                                    <button onclick="showLoginForm()" class="text-orange-500 hover:text-orange-400">Login</button>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Profile View -->
+                    <div id="profileView" class="space-y-4">
+                        <!-- Profile Info Card -->
+                        <div class="bg-[#1a1f2e] rounded-xl p-6">
+                            <div class="flex items-center gap-4">
+                                <div class="w-16 h-16 rounded-full bg-orange-500 flex items-center justify-center text-white text-2xl font-bold">
+                                    <span id="profileInitial">K</span>
+                                </div>
+                                <div>
+                                    <h2 id="profileName" class="text-white text-xl font-bold"></h2>
+                                    <p id="profileUsername" class="text-gray-400 text-sm"></p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Contact Info Card -->
+                        <div class="bg-[#1a1f2e] rounded-xl p-6 space-y-4">
+                            <div>
+                                <label class="text-gray-400 text-sm block mb-1">Email</label>
+                                <p id="profileEmail" class="text-white"></p>
+                            </div>
+                            <div>
+                                <label class="text-gray-400 text-sm block mb-1">Mobile Number</label>
+                                <p id="profileMobile" class="text-white"></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <div id="bottomNav">
+        <div class="flex justify-around items-center h-full">
+            <button onclick="showScreen('mainScreen')" class="nav-item">
+                <i class="fas fa-home"></i>
+                <span>Home</span>
+            </button>
+            <button onclick="showScreen('withdrawScreen')" class="nav-item">
+                <i class="fas fa-arrow-up"></i>
+                <span>Withdraw</span>
+            </button>
+            <button onclick="showScreen('depositScreen')" class="nav-item">
+                <i class="fas fa-arrow-down"></i>
+                <span>Deposit</span>
+            </button>
+            <button onclick="showScreen('profileScreen')" class="nav-item">
+                <i class="fas fa-user"></i>
+                <span>Profile</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Add this HTML for the betting popup right before the </div> of screen-container -->
+    <div id="colorPopup" class="fixed inset-0 bg-black/50 z-50 hidden" onclick="hidePopup()">
+        <div class="absolute bottom-0 left-0 right-0 bg-gray-900 rounded-t-3xl overflow-hidden">
+            <div id="popupHeader" class="py-6 text-center text-white bg-gray-800">
+                <span id="colorSelection">Select Option</span>
+            </div>
+            
+            <!-- Balance Selection -->
+            <div class="p-4 space-y-4">
+                <div class="flex gap-2">
+                    <button onclick="selectBalance(1)" class="balance-btn active bg-[#2c3347] text-white rounded-lg py-2 flex-1">1</button>
+                    <button onclick="selectBalance(10)" class="balance-btn bg-[#2c3347] text-white rounded-lg py-2 flex-1">10</button>
+                    <button onclick="selectBalance(100)" class="balance-btn bg-[#2c3347] text-white rounded-lg py-2 flex-1">100</button>
+                    <button onclick="selectBalance(1000)" class="balance-btn bg-[#2c3347] text-white rounded-lg py-2 flex-1">1000</button>
+                </div>
+                
+                <!-- Quantity Selection -->
+                <div class="flex items-center justify-between bg-[#2c3347] rounded-lg p-2">
+                    <span class="text-white px-4">Quantity</span>
+                    <div class="flex items-center gap-2">
+                        <button onclick="updateQuantity('decrease')" class="text-white bg-gray-700 w-8 h-8 rounded-lg">-</button>
+                        <span id="quantityDisplay" class="text-white w-8 text-center">1</span>
+                        <button onclick="updateQuantity('increase')" class="text-white bg-gray-700 w-8 h-8 rounded-lg">+</button>
+                    </div>
+                </div>
+                
+                <!-- Multiplier Selection -->
+                <div class="grid grid-cols-6 gap-2">
+                    <button onclick="setMultiplier(1)" class="multiplier-btn active bg-[#2c3347] text-white text-sm rounded-lg py-2">X1</button>
+                    <button onclick="setMultiplier(5)" class="multiplier-btn bg-[#2c3347] text-white text-sm rounded-lg py-2">X5</button>
+                    <button onclick="setMultiplier(10)" class="multiplier-btn bg-[#2c3347] text-white text-sm rounded-lg py-2">X10</button>
+                    <button onclick="setMultiplier(20)" class="multiplier-btn bg-[#2c3347] text-white text-sm rounded-lg py-2">X20</button>
+                    <button onclick="setMultiplier(50)" class="multiplier-btn bg-[#2c3347] text-white text-sm rounded-lg py-2">X50</button>
+                    <button onclick="setMultiplier(100)" class="multiplier-btn bg-[#2c3347] text-white text-sm rounded-lg py-2">X100</button>
+                </div>
+                
+                <!-- Agreement and Total -->
+                <div class="flex items-center justify-between text-white">
+                    <div class="flex items-center gap-2">
+                        <input type="checkbox" id="agreementCheckbox" class="w-4 h-4 rounded">
+                        <label>I agree to Pre-sale rules</label>
+                    </div>
+                    <div>Total: <span id="totalAmount">1</span></div>
+                </div>
+                
+                <!-- Submit Button -->
+                <button onclick="submitBet()" class="w-full bg-[#2c3347] text-white py-3 rounded-xl font-medium">
+                    Confirm
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add this HTML right after the colorPopup div -->
+    <div id="notificationPopup" class="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 hidden">
+        <div class="bg-gray-900 text-white px-6 py-3 rounded-xl shadow-lg border-l-4 animate-slide-in">
+            <span id="notificationMessage"></span>
+        </div>
+    </div>
+
+    <div id="winPopup" class="fixed inset-0 bg-black/80 z-50 hidden flex items-center justify-center">
+        <div class="bg-gray-900 rounded-2xl p-6 max-w-sm w-full mx-4 animate-scale-in">
+            <div class="text-center">
+                <div class="text-yellow-500 text-5xl mb-4">
+                    <i class="fas fa-trophy"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-white mb-2">Congratulations!</h2>
+                <p class="text-gray-300 mb-4">You won</p>
+                <div class="text-4xl font-bold text-green-500 mb-6">
+                    ₹<span id="winAmount">0</span>
+                </div>
+                <button onclick="hideWinPopup()" class="bg-green-500 text-white px-8 py-3 rounded-xl font-bold hover:bg-green-600 transition-all">
+                    Collect
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add this HTML right after the winPopup div -->
+    <div id="lossPopup" class="fixed inset-0 bg-black/80 z-50 hidden flex items-center justify-center">
+        <div class="bg-gray-900 rounded-2xl p-6 max-w-sm w-full mx-4 animate-scale-in">
+            <div class="text-center">
+                <div class="text-red-500 text-5xl mb-4">
+                    <i class="fas fa-times-circle"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-white mb-2">Better Luck Next Time!</h2>
+                <p class="text-gray-300 mb-4">You lost</p>
+                <div class="text-4xl font-bold text-red-500 mb-6">
+                    ₹<span id="lossAmount">0</span>
+                </div>
+                <button onclick="hideLossPopup()" class="bg-red-500 text-white px-8 py-3 rounded-xl font-bold hover:bg-red-600 transition-all">
+                    OK
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- First, add these new screens right before the bottom navigation div -->
+    <div id="howToPlayScreen" class="screen">
+        <div class="bg-gray-900 min-h-screen pb-20">
+            <div class="container mx-auto px-4 py-6">
+                <!-- Header -->
+                <div class="flex items-center mb-8">
+                    <button onclick="showScreen('mainScreen')" class="text-white mr-4">
+                        <i class="fas fa-arrow-left text-2xl"></i>
+                    </button>
+                    <h1 class="text-white text-2xl font-bold">How to Play</h1>
+                </div>
+
+                <!-- Content -->
+                <div class="space-y-6">
+                    <!-- Game Types -->
+                    <div class="bg-gray-800 rounded-2xl p-6">
+                        <h2 class="text-xl font-bold text-white mb-4">Game Types</h2>
+                        <div class="space-y-4">
+                            <div class="flex items-start gap-3">
+                                <div class="text-green-500 mt-1"><i class="fas fa-circle"></i></div>
+                                <div>
+                                    <h3 class="text-white font-bold mb-1">Colors</h3>
+                                    <p class="text-gray-300 text-sm">Bet on Red, Green, or Violet. Green and Red pay 2x, Violet pays 2x.</p>
+                                </div>
+                            </div>
+                            <div class="flex items-start gap-3">
+                                <div class="text-orange-500 mt-1"><i class="fas fa-dice"></i></div>
+                                <div>
+                                    <h3 class="text-white font-bold mb-1">Numbers</h3>
+                                    <p class="text-gray-300 text-sm">Bet on numbers 0-9. Correct number predictions pay 2x.</p>
+                                </div>
+                            </div>
+                            <div class="flex items-start gap-3">
+                                <div class="text-blue-500 mt-1"><i class="fas fa-arrows-up-down"></i></div>
+                                <div>
+                                    <h3 class="text-white font-bold mb-1">Size</h3>
+                                    <p class="text-gray-300 text-sm">Bet on Big or Small. Correct predictions pay 2x.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Betting Instructions -->
+                    <div class="bg-gray-800 rounded-2xl p-6">
+                        <h2 class="text-xl font-bold text-white mb-4">How to Bet</h2>
+                        <div class="space-y-4">
+                            <div class="flex items-start gap-3">
+                                <div class="text-yellow-500 mt-1">1</div>
+                                <p class="text-gray-300 text-sm">Select your bet type (Color, Number, or Size)</p>
+                            </div>
+                            <div class="flex items-start gap-3">
+                                <div class="text-yellow-500 mt-1">2</div>
+                                <p class="text-gray-300 text-sm">Choose your bet amount using the balance selector</p>
+                            </div>
+                            <div class="flex items-start gap-3">
+                                <div class="text-yellow-500 mt-1">3</div>
+                                <p class="text-gray-300 text-sm">Adjust quantity and multiplier if desired</p>
+                            </div>
+                            <div class="flex items-start gap-3">
+                                <div class="text-yellow-500 mt-1">4</div>
+                                <p class="text-gray-300 text-sm">Agree to pre-sale rules and confirm your bet</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="presaleRulesScreen" class="screen">
+        <div class="bg-gray-900 min-h-screen pb-20">
+            <div class="container mx-auto px-4 py-6">
+                <!-- Header -->
+                <div class="flex items-center mb-8">
+                    <button onclick="showScreen('mainScreen')" class="text-white mr-4">
+                        <i class="fas fa-arrow-left text-2xl"></i>
+                    </button>
+                    <h1 class="text-white text-2xl font-bold">Presale Rules</h1>
+                </div>
+
+                <!-- Content -->
+                <div class="space-y-6">
+                    <!-- General Rules -->
+                    <div class="bg-gray-800 rounded-2xl p-6">
+                        <h2 class="text-xl font-bold text-white mb-4">General Rules</h2>
+                        <div class="space-y-3 text-gray-300 text-sm">
+                            <p>1. All bets are final once placed</p>
+                            <p>2. Minimum bet amount is ₹1</p>
+                            <p>3. Each game round lasts 30 seconds</p>
+                        </div>
+                    </div>
+
+                    <!-- Withdrawal Rules -->
+                    <div class="bg-gray-800 rounded-2xl p-6">
+                        <h2 class="text-xl font-bold text-white mb-4">Withdrawal Rules</h2>
+                        <div class="space-y-3 text-gray-300 text-sm">
+                            <p>1. Minimum withdrawal amount is ₹1</p>
+                            <p>2. Withdrawals are processed within 24 hours</p>
+                            <p>3. Maximum withdrawal per withdraw is ₹5,000</p>
+                        </div>
+                    </div>
+
+                    <!-- Fair Play -->
+                    <div class="bg-gray-800 rounded-2xl p-6">
+                        <h2 class="text-xl font-bold text-white mb-4">Fair Play Policy</h2>
+                        <div class="space-y-3 text-gray-300 text-sm">
+                            <p>1. Any form of cheating will result in account Ban</p>
+                            <p>2. The company reserves the right to verify any bet or transaction</p>
+                            <p>3. Users must be 18+ to play</p>
+                        </div>
+                    </div>
+
+                    <!-- Responsible Gaming -->
+                    <div class="bg-gray-800 rounded-2xl p-6">
+                        <h2 class="text-xl font-bold text-white mb-4">Responsible Gaming</h2>
+                        <div class="space-y-3 text-gray-300 text-sm">
+                            <p>1. Set your own limits and stick to them</p>
+                            <p>2. Never chase losses</p>
+                            <p>3. Only bet what you can afford to lose</p>
+                            <p>4. Take regular breaks from gaming</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add these right after your <style> tag and before your main script -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
+    <!-- Initialize Firebase -->
+    <script>
+    const firebaseConfig = {
+        apiKey: "AIzaSyA1NChxNR0a2D9oImLFAAN2bhQe10jDGsM",
+        authDomain: "color-ecd3e.firebaseapp.com",
+        projectId: "color-ecd3e",
+        storageBucket: "color-ecd3e.appspot.com",
+        messagingSenderId: "438249616713",
+        appId: "1:438249616713:web:c1d5e3c5b057487d205698",
+        measurementId: "G-D4Y5Z5QPNR"
+    };
+
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    // Update the initialization settings to use cache instead of enablePersistence
+    db.settings({
+        cacheSizeBytes: firebase.firestore.CACHE_SIZE_UNLIMITED,
+        merge: true,
+        cache: {
+            tabManager: {
+                // This enables multi-tab support
+                persistenceEnabled: true,
+                synchronizeTabs: true
+            }
+        }
+    });
+
+    // Set auth persistence
+    firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+
+    // Initialize app after DOM is loaded
+    document.addEventListener('DOMContentLoaded', async function() {
+        try {
+            await firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+            console.log("Persistence set to LOCAL");
+            
+            // Initialize auth manager first
+            await AuthManager.init();
+            
+            // Then initialize app
+            await initializeApp();
+            
+            // Test Firestore connection last
+            const testDoc = await db.collection('rounds').limit(1).get();
+            console.log("Firestore connection successful");
+        } catch (error) {
+            console.error("Error initializing app:", error);
+        }
+    });
+    </script>
+
+    <script>
+        // Replace the existing AuthManager with this updated version
+        const AuthManager = {
+            currentUser: null,
+            
+            async init() {
+                try {
+                    firebase.auth().onAuthStateChanged(async user => {
+                        if (user) {
+                            // Get additional user data from Firestore
+                            const userDoc = await db.collection('users').doc(user.uid).get();
+                            if (userDoc.exists) {
+                                const userData = userDoc.data();
+                                this.currentUser = { 
+                                    uid: user.uid,
+                                    email: user.email,
+                                    username: userData.username,
+                                    mobile: userData.mobile,
+                                    balance: userData.balance || 0
+                                };
+                                this.updateUI(true);
+                                // Set the betting system balance from Firestore
+                                BettingSystem.setBalance(userData.balance || 0);
+                            } else {
+                                console.error('User document not found');
+                                this.logout();
+                            }
+                        } else {
+                            this.currentUser = null;
+                            this.updateUI(false);
+                            BettingSystem.setBalance(0);
+                        }
+                    });
+                } catch (error) {
+                    console.error('Auth initialization error:', error);
+                    this.logout();
+                }
+            },
+
+            updateUI(isLoggedIn) {
+                if (isLoggedIn && this.currentUser) {
+                    // Update wallet content
+                    const walletContent = document.getElementById('walletContent');
+                    if (walletContent) {
+                        walletContent.innerHTML = `
+                            <div class="mb-2 text-lg">Hi ${this.currentUser.username}!</div>
+                            <div class="text-3xl font-bold flex justify-center items-center gap-2">
+                                <i class="fas fa-wallet"></i>
+                                <span>₹<span id="balanceAmount">${this.currentUser.balance || 0}</span></span>
+                            </div>
+                            <div class="flex gap-4 mt-4">
+                                <button onclick="showScreen('withdrawScreen')" class="bg-red-500 text-white rounded-full py-2.5 flex-1 font-medium hover:bg-red-600 transition-colors shadow-lg">Withdraw</button>
+                                <button onclick="showScreen('depositScreen')" class="bg-green-600 text-white rounded-full py-2.5 flex-1 font-medium hover:bg-green-700 transition-colors shadow-lg">Deposit</button>
+                            </div>
+                        `;
+                    }
+
+                    // Update profile view
+                    document.getElementById('profileName').textContent = this.currentUser.name || '';
+                    document.getElementById('profileUsername').textContent = '@' + this.currentUser.username;
+                    document.getElementById('profileEmail').textContent = this.currentUser.email || '';
+                    document.getElementById('profileMobile').textContent = this.currentUser.mobile || '';
+                    document.getElementById('profileInitial').textContent = (this.currentUser.name || '')[0]?.toUpperCase() || '';
+
+                    // Show profile view, hide login/registration forms
+                    document.getElementById('loginForm').style.display = 'none';
+                    document.getElementById('registrationForm').style.display = 'none';
+                    document.getElementById('profileView').style.display = 'block';
+                    document.getElementById('logoutBtn').style.display = 'block';
+                } else {
+                    // Show login form when not logged in
+                    document.getElementById('walletContent').innerHTML = `
+                        <div class="text-lg mb-2">Please log in to view your balance</div>
+                        <button onclick="showScreen('profileScreen')" class="bg-white text-orange-500 px-6 py-2 rounded-lg font-medium hover:bg-orange-100 transition-all">
+                            Login
+                        </button>
+                    `;
+                    showLoginForm();
+                }
+            },
+
+            async register(userData) {
+                try {
+                    // Check if username exists
+                    const usernameCheck = await db.collection('users')
+                        .where('username', '==', userData.username)
+                        .get();
+
+                    if (!usernameCheck.empty) {
+                        throw new Error('Username already exists');
+                    }
+
+                    // Create auth user
+                    const authResult = await firebase.auth()
+                        .createUserWithEmailAndPassword(userData.email, userData.password);
+
+                    // Create user document in Firestore
+                    await db.collection('users').doc(authResult.user.uid).set({
+                        username: userData.username,
+                        email: userData.email,
+                        mobile: userData.mobile,
+                        balance: 0,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+
+                    // Update current user
+                    this.currentUser = {
+                        ...authResult.user,
+                        username: userData.username,
+                        mobile: userData.mobile,
+                        balance: 0
+                    };
+
+                    this.updateUI(true);
+                    showScreen('mainScreen');
+                    BettingSystem.showNotification('Registration successful!', 'success');
+
+                } catch (error) {
+                    console.error('Registration error:', error);
+                    if (error.code === 'auth/email-already-in-use') {
+                        throw new Error('Email already registered');
+                    }
+                    throw error;
+                }
+            },
+
+            async login(email, password) {
+                try {
+                    const authResult = await firebase.auth()
+                        .signInWithEmailAndPassword(email, password);
+                    
+                    const userDoc = await db.collection('users').doc(authResult.user.uid).get();
+                    if (!userDoc.exists) {
+                        throw new Error('User data not found');
+                    }
+
+                    const userData = userDoc.data();
+                    this.currentUser = { 
+                        uid: authResult.user.uid,
+                        email: authResult.user.email,
+                        username: userData.username,
+                        mobile: userData.mobile,
+                        balance: userData.balance || 0
+                    };
+                    
+                    // Set the betting system balance immediately after login
+                    BettingSystem.setBalance(userData.balance || 0);
+                    this.updateUI(true);
+                    showScreen('mainScreen');
+                    BettingSystem.showNotification('Login successful!', 'success');
+
+                } catch (error) {
+                    console.error('Login error:', error);
+                    if (error.code === 'auth/invalid-credential') {
+                        throw new Error('Invalid email or password');
+                    }
+                    throw error;
+                }
+            },
+
+            async logout() {
+                try {
+                    await firebase.auth().signOut();
+                    this.currentUser = null;
+                    this.updateUI(false);
+                    BettingSystem.setBalance(0);
+                    showScreen('mainScreen');
+                } catch (error) {
+                    console.error('Logout error:', error);
+                    BettingSystem.showNotification('Error logging out', 'error');
+                }
+            },
+
+            getCurrentUser() {
+                return this.currentUser;
+            },
+
+            isLoggedIn() {
+                return !!this.currentUser;
+            }
+        };
+
+        // Period Management
+        function getCurrentYearPrefix() {
+            const currentDate = new Date();
+            return currentDate.getFullYear().toString().substring(0, 4);
+        }
+
+        function initializePeriod() {
+            // Try to get the period from local storage
+            let period = localStorage.getItem('gamePeriod');
+            
+            if (!period) {
+                // If no period in storage, initialize with current year
+                period = getCurrentYearPrefix() + '00000000';
+            } else {
+                // Check if we need to update the year
+                const storedYearPrefix = period.substring(0, 4);
+                const currentYearPrefix = getCurrentYearPrefix();
+                
+                if (storedYearPrefix !== currentYearPrefix) {
+                    // If year has changed, reset to new year with counter at 0
+                    period = currentYearPrefix + '00000000';
+                }
+            }
+            
+            // Update the display and save to storage
+            const periodElement = document.getElementById('period');
+            if (periodElement) {
+                periodElement.textContent = period;
+                localStorage.setItem('gamePeriod', period);
+            }
+        }
+
+        function updatePeriod() {
+            const periodElement = document.getElementById('period');
+            if (periodElement) {
+                let currentPeriod = periodElement.textContent;
+                const currentYearPrefix = getCurrentYearPrefix();
+                
+                // Check if we need to update the year
+                if (currentPeriod.substring(0, 4) !== currentYearPrefix) {
+                    currentPeriod = currentYearPrefix + '00000000';
+                }
+                
+                // Increment the counter part
+                const yearPart = currentPeriod.substring(0, 4);
+                const counterPart = currentPeriod.substring(4);
+                const newCounter = (parseInt(counterPart) + 1).toString().padStart(8, '0');
+                const newPeriod = yearPart + newCounter;
+                
+                // Update display and storage
+                periodElement.textContent = newPeriod;
+                localStorage.setItem('gamePeriod', newPeriod);
+            }
+        }
+
+        // Timer Management
+        const TIMER_DURATION = 30000; // 30 seconds in milliseconds
+
+        function initializeTimer() {
+            const now = new Date().getTime();
+            let savedEndTime = localStorage.getItem('gameEndTime');
+            let savedLastUpdate = localStorage.getItem('lastPeriodUpdate');
+            
+            if (savedEndTime) {
+                savedEndTime = parseInt(savedEndTime);
+                // If the saved end time has passed, calculate how many intervals have passed
+                if (savedEndTime < now) {
+                    const timeDiff = now - savedEndTime;
+                    const intervals = Math.floor(timeDiff / TIMER_DURATION);
+                    
+                    // Update period for each missed interval
+                    for (let i = 0; i < intervals; i++) {
+                        updatePeriod();
+                    }
+                    
+                    // Set new end time based on the next 30-second interval
+                    endTime = savedEndTime + (Math.ceil(timeDiff / TIMER_DURATION) * TIMER_DURATION);
+                } else {
+                    // Use the saved end time if it's still in the future
+                    endTime = savedEndTime;
+                }
+            } else {
+                // If no saved end time, start fresh
+                endTime = now + TIMER_DURATION;
+            }
+            
+            // Restore or initialize lastPeriodUpdate
+            lastPeriodUpdate = savedLastUpdate ? parseInt(savedLastUpdate) : now;
+            
+            // Store initial values
+            localStorage.setItem('gameEndTime', endTime.toString());
+            localStorage.setItem('lastPeriodUpdate', lastPeriodUpdate.toString());
+        }
+
+        // Initialize app
+        function initializeApp() {
+            const overlayTimer = document.getElementById('overlayTimer');
+            if (overlayTimer) {
+                overlayTimer.style.display = 'none';
+            }
+            
+            initializePeriod(); // Initialize period first
+            initializeTimer(); // Initialize timer with persistence
+            updateTimer();
+            
+            AuthManager.init();
+            BettingSystem.initBalance();
+            updateWalletContent();
+        }
+
+        // Timer functionality
+        let endTime;
+        let lastPeriodUpdate = 0;
+
+        function updateTimer() {
+            const now = new Date().getTime();
+            const timeLeft = endTime - now;
+            const overlayTimer = document.getElementById('overlayTimer');
+            const gameContent = document.getElementById('gameContent');
+            const isOnMainScreen = document.getElementById('mainScreen').classList.contains('active');
+
+            if (timeLeft <= 0) {
+                // Hide overlay timer if visible
+                overlayTimer.style.display = 'none';
+                if (gameContent) gameContent.classList.remove('dimmed');
+                
+                // Show result popup only if on main screen
+                if (isOnMainScreen) {
+                    showResultPopup();
+                }
+                
+                // Only update period if enough time has passed
+                if (now - lastPeriodUpdate >= 29000) {
+                    updatePeriod();
+                    lastPeriodUpdate = now;
+                    localStorage.setItem('lastPeriodUpdate', lastPeriodUpdate.toString());
+                }
+                
+                // Reset timer
+                endTime = now + TIMER_DURATION;
+                localStorage.setItem('gameEndTime', endTime.toString());
+            }
+
+            const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
+            const millis = Math.floor((timeLeft % 1000) / 10);
+
+            // Show overlay timer at 5 seconds only if on main screen
+            if (seconds <= 5 && seconds > 0 && isOnMainScreen) {
+                overlayTimer.style.display = 'flex';
+                if (gameContent) gameContent.classList.add('dimmed');
+                document.querySelector('.countdown-number').textContent = seconds;
+            } else {
+                overlayTimer.style.display = 'none';
+                if (gameContent) gameContent.classList.remove('dimmed');
+            }
+
+            document.getElementById('seconds1').textContent = Math.floor(seconds / 10);
+            document.getElementById('seconds2').textContent = seconds % 10;
+            document.getElementById('millis1').textContent = Math.floor(millis / 10);
+            document.getElementById('millis2').textContent = millis % 10;
+
+            requestAnimationFrame(updateTimer);
+        }
+
+        // Add visibility change handling
+        document.addEventListener('visibilitychange', function() {
+            if (!document.hidden) {
+                // When page becomes visible again, re-initialize timer to sync
+                initializeTimer();
+            }
+        });
+
+        // Login handler
+        function login() {
+            const usernameOrEmail = document.getElementById('loginUsername').value;
+            const password = document.getElementById('loginPassword').value;
+
+            if (!usernameOrEmail || !password) {
+                showError('login', 'Please fill in all fields');
+                return;
+            }
+
+            AuthManager.login(usernameOrEmail, password);
+        }
+
+        // Register handler
+        function register() {
+            const name = document.getElementById('regName').value.trim();
+            const username = document.getElementById('regUsername').value.trim();
+            const email = document.getElementById('regEmail').value.trim();
+            const mobile = document.getElementById('regMobile').value.trim();
+            const password = document.getElementById('regPassword').value;
+            const confirmPassword = document.getElementById('regConfirmPassword').value;
+
+            // Validation
+            if (!name || !username || !email || !mobile || !password || !confirmPassword) {
+                BettingSystem.showNotification('Please fill in all fields', 'error');
+                return;
+            }
+
+            if (password !== confirmPassword) {
+                BettingSystem.showNotification('Passwords do not match', 'error');
+                return;
+            }
+
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                BettingSystem.showNotification('Please enter a valid email address', 'error');
+                return;
+            }
+
+            const mobileRegex = /^\d{10}$/;
+            if (!mobileRegex.test(mobile)) {
+                BettingSystem.showNotification('Please enter a valid 10-digit mobile number', 'error');
+                return;
+            }
+
+            // Get existing users or initialize empty array
+            const users = JSON.parse(localStorage.getItem('users') || '[]');
+
+            // Check if username or email already exists
+            if (users.some(user => user.username === username)) {
+                BettingSystem.showNotification('Username already exists', 'error');
+                return;
+            }
+
+            if (users.some(user => user.email === email)) {
+                BettingSystem.showNotification('Email already exists', 'error');
+                return;
+            }
+
+            // Create new user with 0 balance
+            const newUser = {
+                name,
+                username,
+                email,
+                mobile,
+                password,
+                balance: 0 // Add initial balance of 0
+            };
+
+            // Add user to array and save
+            users.push(newUser);
+            localStorage.setItem('users', JSON.stringify(users));
+
+            // Show success message
+            BettingSystem.showNotification('Registration successful! Please login.', 'success');
+            
+            // Switch to login form
+            setTimeout(() => {
+                showLoginForm();
+            }, 1500);
+        }
+
+        // Logout handler
+        function logout() {
+            AuthManager.logout();
+        }
+
+        function updateProfileView(user) {
+            if (user) {
+                document.getElementById('profileName').textContent = user.name || 'User';
+                document.getElementById('profileUsername').textContent = '@' + user.username;
+                document.getElementById('profileEmail').textContent = user.email || 'Not provided';
+                document.getElementById('profileMobile').textContent = user.mobile || 'Not provided';
+                document.getElementById('profileInitial').textContent = (user.name || user.username || 'U').charAt(0).toUpperCase();
+            }
+        }
+
+        // Initialize app on both events for maximum compatibility
+        window.addEventListener('load', initializeApp);
+        document.addEventListener('DOMContentLoaded', initializeApp);
+
+        // Prevent form submission on enter key
+        document.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                return false;
+            }
+        });
+
+        // Result popup functionality
+        function showResultPopup() {
+            const resultNumber = document.getElementById('resultNumber');
+            const resultSize = document.getElementById('resultSize');
+            const resultColor = document.getElementById('resultColor');
+
+            // Generate truly random number 0-9
+            const number = Math.floor(Math.random() * 10);
+            
+            // Determine size based on number
+            const size = number >= 5 ? 'BIG' : 'SMALL';
+            
+            // Determine color based on number
+            let color;
+            if (number === 0) {
+                color = 'VIOLET';
+            } else if (number % 2 === 0) {
+                color = 'RED';
+            } else {
+                color = 'GREEN';
+            }
+
+            // Set the values
+            resultNumber.textContent = number;
+            resultSize.textContent = size;
+            resultColor.textContent = color;
+            
+            // Always add to round history, regardless of screen
+            BettingSystem.history.addRound(number, color, size);
+            
+            // Process any active bets
+            const currentBet = localStorage.getItem('currentBet');
+            if (currentBet) {
+                const bet = JSON.parse(currentBet);
+                
+                // Check if bet won
+                const isWin = bet.type === color.toLowerCase() || 
+                             (bet.type === 'big' && size === 'BIG') ||
+                             (bet.type === 'small' && size === 'SMALL') ||
+                             bet.type === number.toString();
+
+                // Always add to bet history, regardless of screen
+                BettingSystem.history.addBet(bet.type, bet.amount, isWin ? 'win' : 'loss');
+
+                // Process win/loss
+                if (isWin) {
+                    const winAmount = BettingSystem.processWin(bet.type, bet.amount);
+                } else {
+                    BettingSystem.showLossPopup(bet.amount);
+                }
+
+                // Clear current bet
+                localStorage.removeItem('currentBet');
+            }
+            
+            // Only show popup if on main screen
+            if (document.getElementById('mainScreen').classList.contains('active')) {
+                const resultPopup = document.getElementById('resultPopup');
+                resultPopup.classList.add('show');
+                
+                // Hide popup after 5 seconds
+                setTimeout(() => {
+                    if (resultPopup.classList.contains('show')) {
+                        resultPopup.classList.remove('show');
+                    }
+                }, 5000);
+            }
+        }
+
+        // Popup State Management
+        let currentColor = '';
+        let selectedBalance = 1;
+        let currentQuantity = 1;
+        let currentMultiplier = 1;
+
+        // Update the showPopup function to check login first
+        function showPopup(type) {
+            // Check if user is logged in
+            if (!AuthManager.isLoggedIn()) {
+                BettingSystem.showNotification('Please login to place bets', 'error');
+                showScreen('profileScreen'); // Redirect to profile/login screen
+                return;
+            }
+
+            const popup = document.getElementById('betPopup');
+            const typeDisplay = document.getElementById('betType');
+            const amountInput = document.getElementById('betAmount');
+            
+            // Reset and show popup
+            typeDisplay.textContent = type.toUpperCase();
+            amountInput.value = '';
+            popup.classList.remove('hidden');
+        }
+
+        function hidePopup() {
+            const popup = document.getElementById('colorPopup');
+            const blurContainer = document.querySelector('.blur-container');
+            popup.classList.add('hidden');
+            blurContainer.classList.remove('active');
+        }
+
+        function selectBalance(amount) {
+            selectedBalance = amount;
+            const accentColor = getAccentColor(currentColor);
+            
+            document.querySelectorAll('.balance-btn').forEach(btn => {
+                btn.classList.remove('active', 'bg-red-500', 'bg-green-500', 'bg-violet-500', 'bg-orange-500');
+                btn.classList.add('bg-[#2c3347]');
+            });
+            
+            const activeBtn = document.querySelector(`.balance-btn:nth-child(${Math.log10(amount) + 1})`);
+            activeBtn.classList.add('active', accentColor);
+            activeBtn.classList.remove('bg-[#2c3347]');
+            updateTotalAmount();
+        }
+
+        function updateQuantity(action) {
+            if (action === 'increase' && currentQuantity < 100) {
+                currentQuantity++;
+            } else if (action === 'decrease' && currentQuantity > 1) {
+                currentQuantity--;
+            }
+            document.getElementById('quantityDisplay').textContent = currentQuantity;
+            updateTotalAmount();
+        }
+
+        function setMultiplier(value) {
+            currentMultiplier = value;
+            const accentColor = getAccentColor(currentColor);
+            
+            document.querySelectorAll('.multiplier-btn').forEach(btn => {
+                btn.classList.remove('active', 'bg-red-500', 'bg-green-500', 'bg-violet-500', 'bg-orange-500');
+                btn.classList.add('bg-[#2c3347]');
+            });
+            
+            const multiplierMap = {1: 1, 5: 2, 10: 3, 20: 4, 50: 5, 100: 6};
+            const activeBtn = document.querySelector(`.multiplier-btn:nth-child(${multiplierMap[value]})`);
+            activeBtn.classList.add('active', accentColor);
+            activeBtn.classList.remove('bg-[#2c3347]');
+            updateTotalAmount();
+        }
+
+        function updateTotalAmount() {
+            const total = selectedBalance * currentQuantity * currentMultiplier;
+            document.getElementById('totalAmount').textContent = total;
+        }
+
+        // Update the submitBet function to also check login
+        async function submitBet() {
+            if (!AuthManager.isLoggedIn()) {
+                BettingSystem.showNotification('Please login to place bets', 'error');
+                showScreen('profileScreen');
+                return;
+            }
+
+            const type = document.getElementById('betType').textContent.toLowerCase();
+            const amount = parseFloat(document.getElementById('betAmount').value);
+
+            if (isNaN(amount) || amount <= 0) {
+                BettingSystem.showNotification('Please enter a valid amount', 'error');
+                return;
+            }
+
+            const success = await BettingSystem.placeBet(type, amount);
+            if (success) {
+                document.getElementById('betPopup').classList.add('hidden');
+                BettingSystem.showNotification(`Bet placed: ${type} for ₹${amount}`, 'success');
+            }
+        }
+
+        // Prevent clicks inside popup from closing it
+        document.querySelector('#colorPopup > div:last-child').addEventListener('click', (e) => {
+            e.stopPropagation();
+        });
+
+        // Screen Management
+        function showScreen(screenId) {
+            // Get all screens
+            const screens = document.querySelectorAll('.screen');
+            const targetScreen = document.getElementById(screenId);
+            
+            if (!targetScreen) {
+                console.warn(`Screen with id "${screenId}" not found. Available screens:`, 
+                    Array.from(screens).map(s => s.id).join(', '));
+                return;
+            }
+
+            // Hide all screens
+            screens.forEach(screen => {
+                if (screen && screen.classList) {
+                    screen.classList.remove('active');
+                    screen.classList.add('hidden');
+                }
+            });
+            
+            // Show target screen
+            targetScreen.classList.remove('hidden');
+            targetScreen.classList.add('active');
+            
+            // Update nav items
+            const navItems = document.querySelectorAll('.nav-item');
+            navItems.forEach(item => {
+                item.classList.remove('active');
+            });
+
+            // Find and activate the correct nav item
+            const activeNavItem = document.querySelector(`.nav-item[onclick*="${screenId}"]`);
+            if (activeNavItem) {
+                activeNavItem.classList.add('active');
+            }
+            
+            // Update bottom nav visibility
+            const bottomNav = document.getElementById('bottomNav');
+            if (bottomNav) {
+                if (screenId === 'withdrawScreen' || screenId === 'depositScreen') {
+                    bottomNav.style.visibility = 'hidden';
+                } else {
+                    bottomNav.style.visibility = 'visible';
+                }
+            }
+        }
+
+        // Amount Management
+        function addNumber(type, num) {
+            const amountElement = document.getElementById(type + 'Amount');
+            let currentAmount = amountElement.textContent;
+            
+            // Handle decimal point
+            if (num === '.' && currentAmount.includes('.')) {
+                return;
+            }
+            
+            // Handle leading zero
+            if (currentAmount === '0' && num !== '.') {
+                currentAmount = '';
+            }
+            
+            // Limit to 2 decimal places
+            if (currentAmount.includes('.')) {
+                const decimalPlaces = currentAmount.split('.')[1];
+                if (decimalPlaces && decimalPlaces.length >= 2) {
+                    return;
+                }
+            }
+            
+            // Limit total length
+            if (currentAmount.length >= 10) {
+                return;
+            }
+
+            const newAmount = parseFloat(currentAmount + num);
+            
+            // Check balance for withdrawals
+            if (type === 'withdraw' && newAmount > BettingSystem.getBalance()) {
+                BettingSystem.showNotification('Amount exceeds available balance!', 'error');
+                return;
+            }
+            
+            amountElement.textContent = currentAmount + num;
+        }
+
+        function clearAmount(type) {
+            const amountElement = document.getElementById(type + 'Amount');
+            let currentAmount = amountElement.textContent;
+            
+            if (currentAmount.length <= 1) {
+                amountElement.textContent = '0';
+            } else {
+                amountElement.textContent = currentAmount.slice(0, -1);
+            }
+        }
+
+        function setQuickAmount(type, amount) {
+            if (type === 'withdraw') {
+                // Add minimum withdrawal check (e.g., ₹1000)
+                const minWithdrawal = 1000;
+                if (amount < minWithdrawal) {
+                    BettingSystem.showNotification(`Minimum withdrawal amount is ₹${minWithdrawal}`, 'error');
+                    return;
+                }
+                
+                // Check balance before setting amount
+                if (amount > BettingSystem.getBalance()) {
+                    BettingSystem.showNotification('Insufficient balance!', 'error');
+                    return;
+                }
+            }
+            document.getElementById(type + 'Amount').textContent = amount;
+        }
+
+        function submitWithdraw() {
+            const amount = parseFloat(document.getElementById('withdrawAmount').textContent);
+            
+            // Check if amount is valid
+            if (isNaN(amount) || amount <= 0) {
+                BettingSystem.showNotification('Please enter a valid amount', 'error');
+                return;
+            }
+
+            // Check if user has sufficient balance
+            if (amount > BettingSystem.getBalance()) {
+                BettingSystem.showNotification('Insufficient balance for withdrawal!', 'error');
+                return;
+            }
+
+            // If all checks pass, proceed with withdrawal
+            const message = `Hello, I would like to withdraw ₹${amount} from my account.`;
+            const whatsappUrl = `https://wa.me/919354835311?text=${encodeURIComponent(message)}`;
+            window.open(whatsappUrl, '_blank');
+            showScreen('mainScreen');
+        }
+
+        function submitDeposit() {
+            const amount = document.getElementById('depositAmount').textContent;
+            const message = `Hello, I would like to deposit ₹${amount} to my account.`;
+            const whatsappUrl = `https://wa.me/919354835311?text=${encodeURIComponent(message)}`;
+            window.open(whatsappUrl, '_blank');
+            showScreen('mainScreen');
+        }
+
+        // User Authentication
+        function showLoginForm() {
+            document.getElementById('loginForm').style.display = 'block';
+            document.getElementById('registrationForm').style.display = 'none';
+            document.getElementById('profileView').style.display = 'none';
+            
+            // Clear any previous input
+            document.getElementById('loginEmail').value = '';
+            document.getElementById('loginPassword').value = '';
+        }
+
+        function showRegistrationForm() {
+            document.getElementById('loginForm').style.display = 'none';
+            document.getElementById('registrationForm').style.display = 'block';
+            document.getElementById('profileView').style.display = 'none';
+        }
+
+        function showProfileView() {
+            document.getElementById('loginForm').style.display = 'none';
+            document.getElementById('registrationForm').style.display = 'none';
+            document.getElementById('profileView').style.display = 'block';
+            document.getElementById('logoutBtn').style.display = 'block';
+        }
+
+        function handleProfilePicChange(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('profilePicPreview').src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function showError(type, message) {
+            const errorElement = document.getElementById(type + 'Error');
+            errorElement.textContent = message;
+            errorElement.style.display = 'block';
+            setTimeout(() => {
+                errorElement.style.display = 'none';
+            }, 5000);
+        }
+
+        function updateWalletContent() {
+            const walletContent = document.getElementById('walletContent');
+            const user = AuthManager.getCurrentUser();
+            
+            if (AuthManager.isLoggedIn() && user) {
+                walletContent.innerHTML = `
+                    <div class="mb-2 text-lg">Hi ${user.username}!</div>
+                    <div class="text-3xl font-bold flex justify-center items-center gap-2">
+                        <i class="fas fa-wallet"></i>
+                        <span>₹<span id="balanceAmount">${BettingSystem.getBalance().toFixed(2)}</span></span>
+                    </div>
+                    <div class="flex gap-4 mt-4">
+                        <button class="bg-red-500 text-white rounded-full py-2.5 flex-1 font-medium hover:bg-red-600 transition-colors shadow-lg" onclick="showScreen('withdrawScreen')">Withdraw</button>
+                        <button class="bg-green-600 text-white rounded-full py-2.5 flex-1 font-medium hover:bg-green-700 transition-colors shadow-lg" onclick="showScreen('depositScreen')">Deposit</button>
+                    </div>
+                `;
+            } else {
+                walletContent.innerHTML = `
+                    <div class="text-lg mb-2">Please log in to view your balance</div>
+                    <button onclick="showScreen('profileScreen')" class="bg-white text-orange-500 px-6 py-2 rounded-lg font-medium hover:bg-orange-100 transition-all">
+                        Login
+                    </button>
+                `;
+            }
+        }
+
+        // Betting System
+        const BettingSystem = {
+            balance: 0, // Changed from 10000 to 0
+            multipliers: {
+                'green': 2,
+                'violet': 4.5,
+                'red': 2,
+                'big': 2,
+                'small': 2,
+                '0': 9,
+                '1': 9,
+                '2': 9,
+                '3': 9,
+                '4': 9,
+                '5': 9,
+                '6': 9,
+                '7': 9,
+                '8': 9,
+                '9': 9
+            },
+
+            async placeBet(type, amount) {
+                if (!AuthManager.isLoggedIn()) {
+                    this.showNotification('Please login to place bets', 'error');
+                    return false;
+                }
+
+                try {
+                    const user = AuthManager.getCurrentUser();
+                    if (!user || !user.uid) {
+                        this.showNotification('User session error. Please login again.', 'error');
+                        return false;
+                    }
+
+                    amount = parseFloat(amount);
+                    
+                    // Check if user has sufficient balance
+                    if (amount > this.balance) {
+                        this.showNotification('Insufficient balance!', 'error');
+                        return false;
+                    }
+
+                    const period = document.getElementById('period').textContent;
+                    const userRef = db.collection('users').doc(user.uid);
+
+                    // Use a transaction to ensure atomic updates
+                    await db.runTransaction(async (transaction) => {
+                        const userDoc = await transaction.get(userRef);
+                        if (!userDoc.exists) {
+                            throw new Error('User document not found');
+                        }
+
+                        const currentBalance = userDoc.data().balance;
+                        if (currentBalance < amount) {
+                            throw new Error('Insufficient balance');
+                        }
+
+                        // Update Firestore balance
+                        transaction.update(userRef, {
+                            balance: firebase.firestore.FieldValue.increment(-amount)
+                        });
+
+                        // Create bet document
+                        const betRef = db.collection('bets').doc();
+                        transaction.set(betRef, {
+                            userId: user.uid,
+                            username: user.username,
+                            type: type,
+                            amount: amount,
+                            period: period,
+                            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                            result: "pending"
+                        });
+                    });
+
+                    // Update local balance after successful Firestore update
+                    this.balance -= amount;
+                    this.updateBalance();
+
+                    // Update UI
+                    const balanceElement = document.getElementById('balanceAmount');
+                    if (balanceElement) {
+                        balanceElement.textContent = this.balance.toFixed(2);
+                    }
+
+                    // Update AuthManager's currentUser balance
+                    if (AuthManager.currentUser) {
+                        AuthManager.currentUser.balance = this.balance;
+                    }
+
+                    this.showNotification('Bet placed successfully!', 'success');
+                    return true;
+
+                } catch (error) {
+                    console.error('Error placing bet:', error);
+                    this.showNotification(error.message || 'Error placing bet', 'error');
+                    return false;
+                }
+            },
+
+            async processRound(number, color, size) {
+                try {
+                    const period = document.getElementById('period').textContent;
+                    
+                    // Get random result
+                    const result = getRandomResult();
+                    
+                    // Add round result
+                    await db.collection('rounds').add({
+                        number: result.number,
+                        color: result.color[0].toUpperCase(), // Store primary color
+                        secondaryColor: result.color[1]?.toUpperCase(), // Store secondary color if exists
+                        size: result.size.toUpperCase(),
+                        period: period,
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+
+                    // Update pending bets for this period
+                    const bets = await db.collection('bets')
+                        .where('period', '==', period)
+                        .where('result', '==', 'pending')
+                        .get();
+
+                    for (const bet of bets.docs) {
+                        const betData = bet.data();
+                        const won = this.checkWin(betData.type, result.number, result.color, result.size);
+                        
+                        if (won) {
+                            await this.processWin(betData.type, betData.amount);
+                        }
+
+                        // Update bet result
+                        await bet.ref.update({
+                            result: won ? 'win' : 'lose'
+                        });
+                    }
+
+                } catch (error) {
+                    console.error('Error processing round:', error);
+                    this.showNotification('Error processing round results', 'error');
+                }
+            },
+
+            async processWin(type, amount) {
+                try {
+                    const user = AuthManager.getCurrentUser();
+                    if (!user || !user.uid) {
+                        console.error('No user found when processing win');
+                        return 0;
+                    }
+
+                    // Get the correct multiplier for the bet type
+                    const multiplier = this.multipliers[type.toLowerCase()] || 2;
+                    const winAmount = amount * multiplier;
+
+                    // Update Firestore first
+                    const userRef = db.collection('users').doc(user.uid);
+                    await userRef.update({
+                        balance: firebase.firestore.FieldValue.increment(winAmount)
+                    });
+
+                    // Update local balance
+                    this.balance += winAmount;
+                    this.updateBalance();
+
+                    // Update AuthManager's currentUser balance
+                    if (AuthManager.currentUser) {
+                        AuthManager.currentUser.balance = this.balance;
+                    }
+
+                    // Show win popup
+                    this.showWinPopup(winAmount);
+
+                    // Update UI
+                    const balanceElement = document.getElementById('balanceAmount');
+                    if (balanceElement) {
+                        balanceElement.textContent = this.balance.toFixed(2);
+                    }
+
+                    return winAmount;
+                } catch (error) {
+                    console.error('Error processing win:', error);
+                    this.showNotification('Error updating balance', 'error');
+                    return 0;
+                }
+            },
+
+            updateBalance() {
+                const balanceElement = document.getElementById('balanceAmount');
+                if (balanceElement) {
+                    balanceElement.textContent = this.balance.toFixed(2);
+                }
+                // Also update the balance in AuthManager
+                if (AuthManager.currentUser) {
+                    AuthManager.currentUser.balance = this.balance;
+                }
+            },
+
+            getBalance() {
+                return this.balance;
+            },
+
+            initBalance() {
+                if (AuthManager.isLoggedIn()) {
+                    // Get balance from current user
+                    const user = AuthManager.getCurrentUser();
+                    this.balance = user.balance || 0;
+                } else {
+                    this.balance = 0;
+                }
+                this.updateBalance();
+                this.history.loadHistory();
+            },
+
+            showNotification(message, type = 'info') {
+                const notification = document.getElementById('notificationPopup');
+                const messageEl = document.getElementById('notificationMessage');
+                
+                messageEl.textContent = message;
+                notification.classList.remove('hidden');
+                
+                // Add color based on type
+                notification.querySelector('div').className = `bg-gray-900 text-white px-6 py-3 rounded-xl shadow-lg border-l-4 animate-slide-in ${
+                    type === 'error' ? 'border-red-500' : 'border-green-500'
+                }`;
+                
+                setTimeout(() => {
+                    notification.classList.add('hidden');
+                }, 3000);
+            },
+
+            showWinPopup(amount) {
+                const popup = document.getElementById('winPopup');
+                const amountEl = document.getElementById('winAmount');
+                
+                amountEl.textContent = amount.toFixed(2);
+                popup.classList.remove('hidden');
+            },
+
+            showLossPopup(amount) {
+                const popup = document.getElementById('lossPopup');
+                const amountEl = document.getElementById('lossAmount');
+                
+                amountEl.textContent = amount.toFixed(2);
+                popup.classList.remove('hidden');
+            },
+
+            history: {
+                rounds: [],
+                bets: [],
+                currentView: 'rounds',
+
+                getColorClass(color) {
+                    switch(color?.toLowerCase()) {
+                        case 'red':
+                            return 'bg-red-500';
+                        case 'green':
+                            return 'bg-green-500';
+                        case 'violet':
+                            return 'bg-violet-500';
+                        default:
+                            return 'bg-gray-500';
+                    }
+                },
+                
+                async loadHistory() {
+                    try {
+                        const roundsSnapshot = await db.collection('rounds')
+                            .orderBy('timestamp', 'desc')
+                            .limit(10)
+                            .get();
+
+                        const rounds = roundsSnapshot.docs.map(doc => ({
+                            id: doc.id,
+                            ...doc.data()
+                        }));
+
+                        const historyContainer = document.getElementById('gameHistory');
+                        if (historyContainer) {
+                            if (rounds.length === 0) {
+                                historyContainer.innerHTML = `
+                                    <div class="text-center text-gray-400 py-4">
+                                        No game history yet
+                                    </div>
+                                `;
+                                return;
+                            }
+
+                            historyContainer.innerHTML = rounds.map(round => `
+                                <div class="grid grid-cols-3 items-center bg-gray-700/50 rounded-lg px-3 py-2">
+                                    <div class="text-gray-300 text-sm">${round.period}</div>
+                                    <div class="flex items-center justify-center gap-2">
+                                        <span class="w-8 h-8 rounded-full bg-gray-600 flex items-center justify-center text-white">${round.number}</span>
+                                        <div class="flex gap-1">
+                                            <span class="w-2 h-2 rounded-full ${this.getColorClass(round.color)}"></span>
+                                        </div>
+                                    </div>
+                                    <div class="text-gray-300 text-right">${round.size}</div>
+                                </div>
+                            `).join('');
+                        }
+                    } catch (error) {
+                        console.error('Error loading history:', error);
+                    }
+                },
+
+                showRoundHistory() {
+                    const historyContainer = document.getElementById('gameHistory');
+                    if (!historyContainer) return;
+
+                    if (this.rounds.length === 0) {
+                        historyContainer.innerHTML = `
+                            <div class="text-center text-gray-400 py-4">
+                                No game history yet
+                            </div>
+                        `;
+                        return;
+                    }
+
+                    historyContainer.innerHTML = this.rounds.map(round => `
+                        <div class="grid grid-cols-3 items-center bg-gray-700/50 rounded-lg px-3 py-2">
+                            <div class="text-gray-300 text-sm">${round.period}</div>
+                            <div class="flex items-center justify-center gap-2">
+                                <span class="w-8 h-8 rounded-full bg-gray-600 flex items-center justify-center text-white">${round.number}</span>
+                                <div class="flex gap-1">
+                                    <span class="w-2 h-2 rounded-full ${this.getColorClass(round.color)}"></span>
+                                </div>
+                            </div>
+                            <div class="text-gray-300 text-right">${round.size}</div>
+                        </div>
+                    `).join('');
+                },
+                
+                async addRound(number, color, size) {
+                    try {
+                    const round = {
+                        period: document.getElementById('period').textContent,
+                            number,
+                            color,
+                            size,
+                            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                        };
+
+                        await db.collection('rounds').add(round);
+                        await this.loadHistory();
+                    } catch (error) {
+                        console.error('Error adding round:', error);
+                    }
+                },
+                
+                async addBet(type, amount, result) {
+                    const user = AuthManager.getCurrentUser();
+                    if (!user || !user.uid) return;
+
+                    try {
+                        const bet = {
+                            userId: user.uid,
+                            username: user.username,
+                            period: document.getElementById('period').textContent,
+                            type,
+                            amount: parseFloat(amount),
+                            result,
+                            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                        };
+
+                        await db.collection('bets').add(bet);
+                        await this.loadHistory();
+                    } catch (error) {
+                        console.error('Error adding bet:', error);
+                        BettingSystem.showNotification('Error recording bet', 'error');
+                    }
+                },
+                
+                updateHistoryTable() {
+                    const historyContainer = document.getElementById('gameHistory');
+                    // Always update localStorage even if container not found
+                    if (this.currentView === 'rounds') {
+                        localStorage.setItem('roundHistory', JSON.stringify(this.rounds));
+                    } else {
+                        localStorage.setItem('betHistory', JSON.stringify(this.bets));
+                    }
+                    
+                    // Only update UI if container exists
+                    if (historyContainer) {
+                        if (this.currentView === 'rounds') {
+                            this.showRoundHistory();
+                        } else {
+                            this.showBetHistory();
+                        }
+                    }
+                },
+
+                showBetHistory() {
+                    this.currentView = 'bets';
+                    const historyContainer = document.getElementById('gameHistory');
+                    if (!historyContainer) return;
+
+                    if (this.bets.length === 0) {
+                        historyContainer.innerHTML = `
+                            <div class="text-center text-gray-400 py-4">
+                                No bets placed yet
+                            </div>
+                        `;
+                        return;
+                    }
+
+                    historyContainer.innerHTML = this.bets.map(bet => `
+                        <div class="grid grid-cols-4 items-center bg-gray-700/50 rounded-lg px-3 py-2">
+                            <div class="text-gray-300 text-sm">${bet.period}</div>
+                            <div class="text-gray-300 text-sm">${bet.type}</div>
+                            <div class="text-gray-300 text-sm">₹${bet.amount}</div>
+                            <div class="text-right">
+                                <span class="px-2 py-1 rounded text-xs ${bet.result === 'win' ? 'bg-green-500/20 text-green-500' : 'bg-red-500/20 text-red-500'}">
+                                    ${bet.result}
+                                </span>
+                            </div>
+                        </div>
+                    `).join('');
+                },
+
+                getColorDot(color) {
+                    switch(color.toLowerCase()) {
+                        case 'red': return 'bg-red-500';
+                        case 'green': return 'bg-green-500';
+                        case 'violet': return 'bg-violet-500';
+                        default: return 'bg-gray-500';
+                    }
+                }
+            },
+
+            // Add this method to BettingSystem
+            setBalance(amount) {
+                this.balance = parseFloat(amount);
+                this.updateBalance();
+                // Update UI immediately
+                const balanceElement = document.getElementById('balanceAmount');
+                if (balanceElement) {
+                    balanceElement.textContent = this.balance.toFixed(2);
+                }
+            },
+
+            checkWin(betType, number, colors, size) {
+                betType = betType.toLowerCase();
+                size = size.toLowerCase();
+                number = parseInt(number);
+
+                // Convert colors to lowercase
+                colors = colors.map(c => c.toLowerCase());
+
+                switch(betType) {
+                    case 'green':
+                        return colors.includes('green');
+                    case 'red':
+                        return colors.includes('red');
+                    case 'violet':
+                        return colors.includes('violet');
+                    case 'big':
+                        return size === 'big';
+                    case 'small':
+                        return size === 'small';
+                    default:
+                        // For number bets
+                        return parseInt(betType) === number;
+                }
+            },
+        };
+
+        // Add helper function to get accent color
+        function getAccentColor(type) {
+            switch(type) {
+                case 'red':
+                    return 'bg-red-500';
+                case 'green':
+                    return 'bg-green-500';
+                case 'violet':
+                    return 'bg-violet-500';
+                default:
+                    return 'bg-orange-500';
+            }
+        }
+
+        // Add this after your existing code
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add click handlers to number buttons
+            document.querySelectorAll('.number-ball').forEach(button => {
+                const number = button.textContent;
+                button.onclick = () => {
+                    if (!AuthManager.isLoggedIn()) {
+                        BettingSystem.showNotification('Please login to place bets', 'error');
+                        showScreen('profileScreen');
+                        return;
+                    }
+                    showPopup(number);
+                };
+            });
+        });
+
+        function hideWinPopup() {
+            const popup = document.getElementById('winPopup');
+            popup.classList.add('hidden');
+        }
+
+        function hideLossPopup() {
+            const popup = document.getElementById('lossPopup');
+            popup.classList.add('hidden');
+        }
+
+        function togglePasswordVisibility(inputId) {
+            const input = document.getElementById(inputId);
+            const icon = input.nextElementSibling.querySelector('i');
+            
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        }
+
+        // Add the hideResultPopup function
+        function hideResultPopup() {
+            const resultPopup = document.getElementById('resultPopup');
+            resultPopup.classList.remove('show');
+        }
+
+        // Add the switchHistory function
+        function switchHistory(type) {
+            // Update button styles
+            const buttons = document.querySelectorAll('.bg-gray-800 .flex button');
+            buttons.forEach(button => {
+                button.classList.remove('bg-orange-500');
+                button.classList.add('bg-gray-700');
+            });
+            event.target.classList.remove('bg-gray-700');
+            event.target.classList.add('bg-orange-500');
+
+            // Update history display
+            if (type === 'rounds') {
+                BettingSystem.history.showRoundHistory();
+            } else {
+                BettingSystem.history.showBetHistory();
+            }
+        }
+
+        // Add this to your DOMContentLoaded event
+        document.addEventListener('DOMContentLoaded', function() {
+            // ... existing code ...
+
+            // Listen for real-time updates to rounds
+            db.collection('rounds')
+                .orderBy('timestamp', 'desc')
+                .limit(10)
+                .onSnapshot(snapshot => {
+                    BettingSystem.history.rounds = snapshot.docs.map(doc => ({
+                        id: doc.id,
+                        ...doc.data()
+                    }));
+                    BettingSystem.history.updateHistoryTable();
+                });
+        });
+    </script>
+
+    <!-- Add this after your Firebase initialization -->
+    <script>
+    firebase.auth().onAuthStateChanged(function(user) {
+        console.log("Auth state changed:", user ? "User logged in" : "No user");
+    });
+
+    db.collection('rounds').limit(1).get()
+        .then(snapshot => {
+            console.log("Firestore connection successful");
+        })
+        .catch(error => {
+            console.error("Firestore error:", error);
+        });
+    </script>
+
+    <!-- After Firebase initialization -->
+    <script>
+    firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL)
+        .then(() => {
+            console.log("Persistence set to LOCAL");
+        })
+        .catch((error) => {
+            console.error("Error setting persistence:", error);
+        });
+    </script>
+
+    <!-- Add this function to handle login -->
+    <script>
+    async function handleLogin() {
+        try {
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value;
+
+            // Basic validation
+            if (!email || !password) {
+                BettingSystem.showNotification('Please fill in all fields', 'error');
+                return;
+            }
+
+            // Email validation
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                BettingSystem.showNotification('Please enter a valid email address', 'error');
+                return;
+            }
+
+            // Show loading state
+            const loginButton = event.target;
+            const originalText = loginButton.textContent;
+            loginButton.disabled = true;
+            loginButton.textContent = 'Logging in...';
+
+            try {
+                await AuthManager.login(email, password);
+            } finally {
+                // Reset button state
+                loginButton.disabled = false;
+                loginButton.textContent = originalText;
+            }
+        } catch (error) {
+            console.error('Login error:', error);
+            BettingSystem.showNotification(
+                error.code === 'auth/invalid-credential' 
+                    ? 'Invalid email or password' 
+                    : error.message,
+                'error'
+            );
+        }
+    }
+    </script>
+
+    <!-- Add this function to handle registration -->
+    <script>
+    async function handleRegistration() {
+        try {
+            const email = document.getElementById('regEmail').value.trim();
+            const username = document.getElementById('regUsername').value.trim();
+            const mobile = document.getElementById('regMobile').value.trim();
+            const password = document.getElementById('regPassword').value;
+
+            // Basic validation
+            if (!email || !username || !mobile || !password) {
+                BettingSystem.showNotification('Please fill in all fields', 'error');
+                return;
+            }
+
+            // Email validation
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                BettingSystem.showNotification('Please enter a valid email address', 'error');
+                return;
+            }
+
+            // Password validation
+            if (password.length < 6) {
+                BettingSystem.showNotification('Password must be at least 6 characters', 'error');
+                return;
+            }
+
+            // Show loading state
+            const regButton = event.target;
+            const originalText = regButton.textContent;
+            regButton.disabled = true;
+            regButton.textContent = 'Creating Account...';
+
+            try {
+                await AuthManager.register({
+                    email,
+                    username,
+                    mobile,
+                    password
+                });
+                
+                // Clear form
+                document.getElementById('regEmail').value = '';
+                document.getElementById('regUsername').value = '';
+                document.getElementById('regMobile').value = '';
+                document.getElementById('regPassword').value = '';
+                
+            } finally {
+                // Reset button state
+                regButton.disabled = false;
+                regButton.textContent = originalText;
+            }
+        } catch (error) {
+            console.error('Registration error:', error);
+            BettingSystem.showNotification(error.message, 'error');
+        }
+    }
+    </script>
+
+    <!-- Add this function to generate random results -->
+    <script>
+    function getRandomResult() {
+        // Random number between 0-9
+        const number = Math.floor(Math.random() * 10);
+        
+        // Determine color based on number
+        let color;
+        if (number === 0 || number === 5) {
+            // 0 and 5 can be violet + (red or green)
+            const violetPlus = Math.random() < 0.5 ? 'red' : 'green';
+            color = ['violet', violetPlus];
+        } else if (number % 2 === 0) {
+            color = ['red'];
+        } else {
+            color = ['green'];
+        }
+        
+        // Determine size
+        const size = number >= 5 ? 'big' : 'small';
+        
+        return {
+            number,
+            color,
+            size
+        };
+    }
+    </script>
+</body>
+</html>
